@@ -55,12 +55,17 @@ async function readItem<T>(key: string): Promise<T | null> {
 	}
 
 	if (hasVercelWriteConfig()) {
-		const response = await fetch(`${edgeConfigItemsEndpoint()}/${key}`, {
+		const response = await fetch(edgeConfigItemEndpoint(key), {
 			headers: { Authorization: `Bearer ${env.VERCEL_API_TOKEN}` }
 		});
 
+		if (response.status === 204) {
+			return null;
+		}
+
 		if (response.ok) {
-			return (await response.json()) as T;
+			const body = (await response.json()) as { value?: T };
+			return body.value ?? null;
 		}
 
 		if (response.status !== 404) {
@@ -158,11 +163,23 @@ function edgeConfigItemsEndpoint(): string {
 	const endpoint = new URL(
 		`https://api.vercel.com/v1/edge-config/${env.VERCEL_EDGE_CONFIG_ID}/items`
 	);
+	applyVercelScope(endpoint);
+	return endpoint.toString();
+}
+
+function edgeConfigItemEndpoint(key: string): string {
+	const endpoint = new URL(
+		`https://api.vercel.com/v1/edge-config/${env.VERCEL_EDGE_CONFIG_ID}/item/${encodeURIComponent(key)}`
+	);
+	applyVercelScope(endpoint);
+	return endpoint.toString();
+}
+
+function applyVercelScope(endpoint: URL): void {
 	if (env.VERCEL_TEAM_ID) {
 		endpoint.searchParams.set('teamId', env.VERCEL_TEAM_ID);
 	}
 	if (env.VERCEL_TEAM_SLUG) {
 		endpoint.searchParams.set('slug', env.VERCEL_TEAM_SLUG);
 	}
-	return endpoint.toString();
 }

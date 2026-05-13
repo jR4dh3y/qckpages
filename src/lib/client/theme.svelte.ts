@@ -7,16 +7,14 @@ class ThemeController {
 
 	init(): void {
 		let stored: string | null;
-		let preferredDark = false;
 
 		try {
 			stored = window.localStorage.getItem(storageKey);
-			preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 		} catch {
 			stored = document.documentElement.dataset.theme ?? null;
 		}
 
-		this.mode = stored === 'light' || stored === 'dark' ? stored : preferredDark ? 'dark' : 'light';
+		this.mode = stored === 'light' || stored === 'dark' ? stored : 'light';
 		this.apply();
 	}
 
