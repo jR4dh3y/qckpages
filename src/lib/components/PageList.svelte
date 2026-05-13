@@ -27,8 +27,8 @@
 	}
 </script>
 
-<section class="self-start border-2 border-[var(--ink)] bg-[var(--panel)]">
-	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
+<section class="flex min-h-0 flex-col self-stretch border-2 border-[var(--ink)] bg-[var(--panel)]">
+	<div class="flex shrink-0 items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
 		<div>
 			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
 		</div>
@@ -37,7 +37,7 @@
 		</p>
 	</div>
 
-	<div class="divide-y-2 divide-[var(--ink)]">
+	<div class="min-h-0 flex-1 divide-y-2 divide-[var(--ink)] overflow-y-auto">
 		{#if isLoading}
 			<div class="p-5 text-sm font-bold text-[var(--muted)]">Loading pages...</div>
 		{:else if pages.length === 0}

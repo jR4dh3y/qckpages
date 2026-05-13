@@ -199,13 +199,15 @@
 </svelte:head>
 
 {#if authStatus === 'signed-in' && user}
-	<div class="flex min-h-dvh flex-col bg-[var(--paper)] text-[var(--ink)]">
+	<div class="flex h-dvh flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
 		<DashboardHeader {user} onsignout={signOut}>
 			<ThemeToggle />
 		</DashboardHeader>
 
-		<main class="mx-auto grid w-full max-w-6xl flex-1 gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]">
-			<div>
+		<main
+			class="mx-auto grid min-h-0 w-full max-w-6xl flex-1 gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]"
+		>
+			<div class="self-start">
 				<UploadPanel {isUploading} error={pageError} onpublish={publishPage} />
 			</div>
 
