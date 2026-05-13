@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import AppFooter from '$lib/components/AppFooter.svelte';
 	import AuthLoadingShell from '$lib/components/AuthLoadingShell.svelte';
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
@@ -198,18 +199,20 @@
 </svelte:head>
 
 {#if authStatus === 'signed-in' && user}
-	<div class="min-h-dvh bg-[var(--paper)] text-[var(--ink)]">
+	<div class="flex min-h-dvh flex-col bg-[var(--paper)] text-[var(--ink)]">
 		<DashboardHeader {user} onsignout={signOut}>
 			<ThemeToggle />
 		</DashboardHeader>
 
-		<main class="mx-auto grid max-w-6xl gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]">
+		<main class="mx-auto grid w-full max-w-6xl flex-1 gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]">
 			<div>
 				<UploadPanel {isUploading} error={pageError} onpublish={publishPage} />
 			</div>
 
 			<PageList {pages} {origin} isLoading={isLoadingPages} ondelete={deletePage} />
 		</main>
+
+		<AppFooter />
 	</div>
 {:else if authStatus === 'checking' || authStatus === 'signed-in'}
 	<AuthLoadingShell>

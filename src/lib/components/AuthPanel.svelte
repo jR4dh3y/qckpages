@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { LogIn } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
+	import AppFooter from './AppFooter.svelte';
 	import TileField from './TileField.svelte';
 
 	interface Props {
@@ -13,7 +14,7 @@
 	let { isLoading, error, onsignin, children }: Props = $props();
 </script>
 
-<section class="relative isolate min-h-dvh overflow-hidden">
+<section class="relative isolate flex min-h-dvh flex-col overflow-hidden">
 	<TileField />
 
 	<div class="pointer-events-auto fixed top-5 right-5 z-20">
@@ -21,7 +22,7 @@
 	</div>
 
 	<div
-		class="pointer-events-none relative z-10 mx-auto grid min-h-dvh w-full max-w-6xl items-center px-5 py-10"
+		class="pointer-events-none relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center px-5 py-10"
 	>
 		<div class="grid gap-8 lg:grid-cols-[1fr_380px] lg:items-end">
 			<div
@@ -68,4 +69,6 @@
 			</div>
 		</div>
 	</div>
+
+	<AppFooter />
 </section>

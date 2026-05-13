@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Copy, ExternalLink, Trash2 } from 'lucide-svelte';
+	import { CheckCheck, Copy, ExternalLink, Trash2 } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
@@ -68,13 +68,6 @@
 							rel="noreferrer"
 						>
 							<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
-							{#if copiedSlug === page.slug}
-								<span
-									class="shrink-0 text-xs font-black tracking-[0.14em] text-[var(--green)] uppercase"
-								>
-									Copied
-								</span>
-							{/if}
 						</a>
 						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-[var(--subtle)] uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
@@ -83,7 +76,11 @@
 
 					<div class="flex gap-2">
 						<IconButton label="Copy public link" onclick={() => copyLink(page.slug)}>
-							<Copy size={17} />
+							{#if copiedSlug === page.slug}
+								<CheckCheck size={17} />
+							{:else}
+								<Copy size={17} />
+							{/if}
 						</IconButton>
 						<IconButton
 							label="Open public page"
