@@ -73,7 +73,7 @@
 
 	.tile:hover::after {
 		border-color: var(--ink);
-		background: rgba(255, 255, 255, 0.18);
+		background: var(--tile-highlight);
 		transform: rotate(4deg);
 	}
 </style>

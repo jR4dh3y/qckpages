@@ -18,6 +18,7 @@
 	--danger-line: #ef9b82;
 	--soft-green: #e8f7f1;
 	--soft-line: #b7ad9c;
+	--tile-highlight: rgba(255, 255, 255, 0.18);
 	--link: #2357c6;
 	--subtle: #7b7468;
 	background: #f7f3ea;
@@ -39,6 +40,7 @@
 	--danger-line: #8b3e29;
 	--soft-green: #17362f;
 	--soft-line: #5a5145;
+	--tile-highlight: rgba(0, 0, 0, 0.28);
 	--link: #86aaff;
 	--subtle: #938979;
 	color-scheme: dark;
