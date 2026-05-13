@@ -5,6 +5,7 @@ const defaultBucket = 'qckpages';
 const region = 'us-east-1';
 const service = 's3';
 const unsignedPayload = 'UNSIGNED-PAYLOAD';
+const emptyPayloadHash = sha256Hex('');
 
 export function getFbsBucket(): string {
 	return env.FBS_BUCKET || defaultBucket;
@@ -20,16 +21,22 @@ export async function uploadHtmlToFbs(params: {
 	await ensureBucket(baseUrl, params.bucket);
 
 	const url = new URL(`${baseUrl}/${encodeSegment(params.bucket)}/${encodeObjectKey(params.key)}`);
+	const payloadHash = sha256Hex(params.body);
 	const response = await fetch(url, {
 		method: 'PUT',
-		headers: signHeaders('PUT', url, {
-			'Content-Type': 'text/html; charset=utf-8'
-		}),
+		headers: signHeaders(
+			'PUT',
+			url,
+			{
+				'Content-Type': 'text/html; charset=utf-8'
+			},
+			payloadHash
+		),
 		body: params.body
 	});
 
 	if (!response.ok) {
-		throw new Error(`FBS upload failed with HTTP ${response.status}`);
+		throw new Error(`FBS upload failed with HTTP ${response.status}${await errorDetail(response)}`);
 	}
 
 	return { etag: response.headers.get('etag') ?? '' };
@@ -40,11 +47,11 @@ export async function deleteHtmlFromFbs(params: { bucket: string; key: string })
 	const url = new URL(`${baseUrl}/${encodeSegment(params.bucket)}/${encodeObjectKey(params.key)}`);
 	const response = await fetch(url, {
 		method: 'DELETE',
-		headers: signHeaders('DELETE', url)
+		headers: signHeaders('DELETE', url, {}, emptyPayloadHash)
 	});
 
 	if (!response.ok && response.status !== 404) {
-		throw new Error(`FBS delete failed with HTTP ${response.status}`);
+		throw new Error(`FBS delete failed with HTTP ${response.status}${await errorDetail(response)}`);
 	}
 }
 
@@ -109,7 +116,7 @@ async function ensureBucket(baseUrl: string, bucket: string): Promise<void> {
 	const bucketUrl = new URL(`${baseUrl}/${encodeSegment(bucket)}`);
 	const head = await fetch(bucketUrl, {
 		method: 'HEAD',
-		headers: signHeaders('HEAD', bucketUrl)
+		headers: signHeaders('HEAD', bucketUrl, {}, emptyPayloadHash)
 	});
 
 	if (head.ok) {
@@ -117,16 +124,18 @@ async function ensureBucket(baseUrl: string, bucket: string): Promise<void> {
 	}
 
 	if (head.status !== 404) {
-		throw new Error(`FBS bucket check failed with HTTP ${head.status}`);
+		throw new Error(`FBS bucket check failed with HTTP ${head.status}${await errorDetail(head)}`);
 	}
 
 	const create = await fetch(bucketUrl, {
 		method: 'PUT',
-		headers: signHeaders('PUT', bucketUrl)
+		headers: signHeaders('PUT', bucketUrl, {}, emptyPayloadHash)
 	});
 
 	if (!create.ok && create.status !== 409) {
-		throw new Error(`FBS bucket create failed with HTTP ${create.status}`);
+		throw new Error(
+			`FBS bucket create failed with HTTP ${create.status}${await errorDetail(create)}`
+		);
 	}
 }
 
@@ -134,14 +143,19 @@ function publicReadObjectPath(bucket: string, key: string): string {
 	return `/public/${encodeSegment(bucket)}/${encodeObjectKey(key)}`;
 }
 
-function signHeaders(method: string, url: URL, extraHeaders: Record<string, string> = {}): Headers {
+function signHeaders(
+	method: string,
+	url: URL,
+	extraHeaders: Record<string, string> = {},
+	payloadHash = unsignedPayload
+): Headers {
 	const amzDate = amzTimestamp(new Date());
 	const shortDate = amzDate.slice(0, 8);
 	const credentialScope = `${shortDate}/${region}/${service}/aws4_request`;
 	const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
 	const canonicalHeaders = [
 		`host:${url.host}`,
-		`x-amz-content-sha256:${unsignedPayload}`,
+		`x-amz-content-sha256:${payloadHash}`,
 		`x-amz-date:${amzDate}`,
 		''
 	].join('\n');
@@ -151,13 +165,13 @@ function signHeaders(method: string, url: URL, extraHeaders: Record<string, stri
 		canonicalQueryString(url),
 		canonicalHeaders,
 		signedHeaders,
-		unsignedPayload
+		payloadHash
 	].join('\n');
 	const signature = signatureFor(shortDate, credentialScope, amzDate, canonicalRequest);
 	const headers = new Headers(extraHeaders);
 
 	headers.set('X-Amz-Date', amzDate);
-	headers.set('X-Amz-Content-SHA256', unsignedPayload);
+	headers.set('X-Amz-Content-SHA256', payloadHash);
 	headers.set(
 		'Authorization',
 		`AWS4-HMAC-SHA256 Credential=${sigV4AccessKeyId()}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
@@ -204,8 +218,9 @@ function amzTimestamp(date: Date): string {
 	return date.toISOString().replace(/[:-]|\.\d{3}/g, '');
 }
 
-function sha256Hex(value: string): string {
-	return createHash('sha256').update(value).digest('hex');
+function sha256Hex(value: string | ArrayBuffer): string {
+	const input = typeof value === 'string' ? value : Buffer.from(value);
+	return createHash('sha256').update(input).digest('hex');
 }
 
 function hmacBuffer(key: Buffer | string, value: string): Buffer {
@@ -245,4 +260,9 @@ function requiredEnv(value: string | undefined, name: string): string {
 	}
 
 	return value.trim();
+}
+
+async function errorDetail(response: Response): Promise<string> {
+	const body = (await response.text().catch(() => '')).trim();
+	return body ? `: ${body.slice(0, 300)}` : '';
 }

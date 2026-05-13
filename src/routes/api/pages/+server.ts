@@ -51,39 +51,44 @@ export const POST: RequestHandler = async (event) => {
 		return json({ error: 'HTML file must be between 1 byte and 2 MB' }, { status: 400 });
 	}
 
-	const existing = await getPageBySlug(slug);
-	if (existing && existing.ownerId !== user.userId) {
-		return json({ error: 'That link is already taken' }, { status: 409 });
+	try {
+		const existing = await getPageBySlug(slug);
+		if (existing && existing.ownerId !== user.userId) {
+			return json({ error: 'That link is already taken' }, { status: 409 });
+		}
+
+		const now = new Date().toISOString();
+		const pageId = existing?.pageId ?? crypto.randomUUID();
+		const version = (existing?.version ?? 0) + 1;
+		const bucket = getFbsBucket();
+		const key = `pages/${pageId}/versions/v${version}/index.html`;
+		const body = await file.arrayBuffer();
+		const upload = await uploadHtmlToFbs({ bucket, key, body });
+
+		const page: PublishedPage = {
+			slug,
+			pageId,
+			ownerId: user.userId,
+			title: title || existing?.title || titleFromFilename(file.name),
+			bucket,
+			key,
+			version,
+			originalFilename: file.name,
+			size: file.size,
+			etag: upload.etag,
+			published: true,
+			createdAt: existing?.createdAt ?? now,
+			updatedAt: now
+		};
+
+		await upsertPage(page);
+
+		return json({
+			page,
+			publicPath: `/${page.slug}`
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Could not publish page';
+		return json({ error: message }, { status: 502 });
 	}
-
-	const now = new Date().toISOString();
-	const pageId = existing?.pageId ?? crypto.randomUUID();
-	const version = (existing?.version ?? 0) + 1;
-	const bucket = getFbsBucket();
-	const key = `pages/${pageId}/versions/v${version}/index.html`;
-	const body = await file.arrayBuffer();
-	const upload = await uploadHtmlToFbs({ bucket, key, body });
-
-	const page: PublishedPage = {
-		slug,
-		pageId,
-		ownerId: user.userId,
-		title: title || existing?.title || titleFromFilename(file.name),
-		bucket,
-		key,
-		version,
-		originalFilename: file.name,
-		size: file.size,
-		etag: upload.etag,
-		published: true,
-		createdAt: existing?.createdAt ?? now,
-		updatedAt: now
-	};
-
-	await upsertPage(page);
-
-	return json({
-		page,
-		publicPath: `/${page.slug}`
-	});
 };
