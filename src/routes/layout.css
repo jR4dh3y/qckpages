@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+:root {
+	font-family: 'Aptos', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+	background: #f7f3ea;
+	color: #171717;
+}
+
+body {
+	min-height: 100dvh;
+	margin: 0;
+	background:
+		linear-gradient(rgba(23, 23, 23, 0.035) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(23, 23, 23, 0.035) 1px, transparent 1px), #f7f3ea;
+	background-size: 32px 32px;
+}
+
+button,
+input {
+	font: inherit;
+}
