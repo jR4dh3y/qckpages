@@ -61,7 +61,7 @@ export const POST: RequestHandler = async (event) => {
 		const pageId = existing?.pageId ?? crypto.randomUUID();
 		const version = (existing?.version ?? 0) + 1;
 		const bucket = getFbsBucket();
-		const key = `pages/${pageId}/versions/v${version}/index.html`;
+		const key = `page-${pageId}-v${version}.html`;
 		const body = await file.arrayBuffer();
 		const upload = await uploadHtmlToFbs({ bucket, key, body });
 

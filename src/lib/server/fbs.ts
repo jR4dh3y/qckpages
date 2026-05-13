@@ -114,6 +114,15 @@ function createSigV4PresignedUrl(bucket: string, key: string): string {
 
 async function ensureBucket(baseUrl: string, bucket: string): Promise<void> {
 	const bucketUrl = new URL(`${baseUrl}/${encodeSegment(bucket)}`);
+	const create = await fetch(bucketUrl, {
+		method: 'PUT',
+		headers: signHeaders('PUT', bucketUrl, {}, emptyPayloadHash)
+	});
+
+	if (create.ok || create.status === 409) {
+		return;
+	}
+
 	const head = await fetch(bucketUrl, {
 		method: 'HEAD',
 		headers: signHeaders('HEAD', bucketUrl, {}, emptyPayloadHash)
@@ -127,12 +136,7 @@ async function ensureBucket(baseUrl: string, bucket: string): Promise<void> {
 		throw new Error(`FBS bucket check failed with HTTP ${head.status}${await errorDetail(head)}`);
 	}
 
-	const create = await fetch(bucketUrl, {
-		method: 'PUT',
-		headers: signHeaders('PUT', bucketUrl, {}, emptyPayloadHash)
-	});
-
-	if (!create.ok && create.status !== 409) {
+	if (!create.ok) {
 		throw new Error(
 			`FBS bucket create failed with HTTP ${create.status}${await errorDetail(create)}`
 		);
