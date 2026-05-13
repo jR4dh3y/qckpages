@@ -62,7 +62,7 @@
 							>
 						</div>
 						<a
-							class="mt-2 flex min-h-11 items-center gap-3 border-2 border-[var(--ink)] bg-[var(--panel)] px-3 py-2 text-sm font-bold text-[var(--link)] hover:bg-[var(--soft-green)] hover:no-underline"
+							class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-[var(--link)] hover:underline"
 							href={resolve('/[slug]', { slug: page.slug })}
 							target="_blank"
 							rel="noreferrer"
