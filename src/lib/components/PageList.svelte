@@ -27,7 +27,9 @@
 	}
 </script>
 
-<section class="flex min-h-0 flex-col self-stretch border-2 border-[var(--ink)] bg-[var(--panel)]">
+<section
+	class="flex max-h-[min(680px,calc(100dvh-12rem))] min-h-0 flex-col self-start border-2 border-[var(--ink)] bg-[var(--panel)]"
+>
 	<div class="flex shrink-0 items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
 		<div>
 			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
@@ -37,7 +39,7 @@
 		</p>
 	</div>
 
-	<div class="hidden-scrollbar min-h-0 flex-1 divide-y-2 divide-[var(--ink)] overflow-y-auto">
+	<div class="hidden-scrollbar min-h-0 divide-y-2 divide-[var(--ink)] overflow-y-auto">
 		{#if isLoading}
 			<div class="p-5 text-sm font-bold text-[var(--muted)]">Loading pages...</div>
 		{:else if pages.length === 0}
