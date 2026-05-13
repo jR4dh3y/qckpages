@@ -35,6 +35,19 @@ export async function uploadHtmlToFbs(params: {
 	return { etag: response.headers.get('etag') ?? '' };
 }
 
+export async function deleteHtmlFromFbs(params: { bucket: string; key: string }): Promise<void> {
+	const baseUrl = requiredEnv(env.FBS_BASE_URL, 'FBS_BASE_URL').replace(/\/$/, '');
+	const url = new URL(`${baseUrl}/${encodeSegment(params.bucket)}/${encodeObjectKey(params.key)}`);
+	const response = await fetch(url, {
+		method: 'DELETE',
+		headers: signHeaders('DELETE', url)
+	});
+
+	if (!response.ok && response.status !== 404) {
+		throw new Error(`FBS delete failed with HTTP ${response.status}`);
+	}
+}
+
 export function createSignedPublicUrl(bucket: string, key: string): string {
 	if (env.FBS_PUBLIC_READ_SIGNING_SECRET) {
 		return createFbsPublicReadUrl(bucket, key);

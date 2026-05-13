@@ -54,9 +54,11 @@
 		try {
 			const identity = await readShooIdentityWhenReady();
 			if (!identity?.token) {
-				if (!user) {
-					authStatus = 'signed-out';
-				}
+				await clearShooIdentity();
+				token = null;
+				user = null;
+				pages = [];
+				authStatus = 'signed-out';
 				return;
 			}
 
@@ -67,17 +69,18 @@
 			await loadPages();
 		} catch (error) {
 			if (error instanceof ShooSessionError && error.code === 'session_expired') {
-				clearShooIdentity();
+				await clearShooIdentity();
 				token = null;
 				user = null;
+				pages = [];
+				authError = error.message;
 				authStatus = 'signed-out';
-				startShooSignIn();
 				return;
 			}
 
 			authError = error instanceof Error ? error.message : 'Could not verify Shoo session';
 			if (!user) {
-				clearShooIdentity();
+				await clearShooIdentity();
 				token = null;
 				authStatus = 'signed-out';
 			}
@@ -179,8 +182,8 @@
 		}
 	}
 
-	function signOut(): void {
-		clearShooIdentity();
+	async function signOut(): Promise<void> {
+		await clearShooIdentity();
 		token = null;
 		user = null;
 		pages = [];

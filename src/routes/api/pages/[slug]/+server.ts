@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { deleteHtmlFromFbs } from '$lib/server/fbs';
 import { getPageBySlug, removePageForUser } from '$lib/server/page-store';
 import { verifyShooRequest } from '$lib/server/shoo';
 import { normalizeSlug } from '$lib/utils/slug';
@@ -24,6 +25,7 @@ export const DELETE: RequestHandler = async (event) => {
 		return json({ error: 'Forbidden' }, { status: 403 });
 	}
 
+	await deleteHtmlFromFbs({ bucket: page.bucket, key: page.key });
 	await removePageForUser(slug, user.userId);
 	return new Response(null, { status: 204 });
 };

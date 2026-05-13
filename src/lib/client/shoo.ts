@@ -90,9 +90,10 @@ export async function startShooSignIn(): Promise<void> {
 	shoo?.startSignIn({ returnTo: '/', requestPii: true });
 }
 
-export function clearShooIdentity(): void {
+export async function clearShooIdentity(): Promise<void> {
 	clearCachedShooSession();
-	window.Shoo?.clearIdentity();
+	const shoo = await waitForShooClient();
+	shoo?.clearIdentity();
 }
 
 export class ShooSessionError extends Error {
