@@ -33,7 +33,7 @@
 					Share an HTML page in seconds.
 				</h1>
 				<p class="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)]">
-					Upload your file, choose a link, and send it to anyone. That is the whole thing.
+					Upload your file, choose a link, and send it to anyone.
 				</p>
 			</div>
 
