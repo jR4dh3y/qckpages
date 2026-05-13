@@ -8,6 +8,8 @@ node_modules
 /.svelte-kit
 /build
 .data
+.opencode
+.vscode
 
 # OS
 .DS_Store
