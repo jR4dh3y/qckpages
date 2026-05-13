@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { Copy, ExternalLink, Trash2 } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
+	import { slide } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
+	import IconButton from './IconButton.svelte';
 	import type { PublishedPage } from '$lib/types/pages';
 
 	interface Props {
@@ -24,86 +27,77 @@
 	}
 </script>
 
-<section class="border-2 border-[#171717] bg-white">
-	<div class="flex items-center justify-between border-b-2 border-[#171717] px-5 py-4">
+<section class="self-start border-2 border-[var(--ink)] bg-[var(--panel)]">
+	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
 		<div>
-			<h2 class="text-lg font-black text-[#171717]">Published</h2>
-			<p class="text-sm text-[#655f55]">{pages.length} page{pages.length === 1 ? '' : 's'}</p>
+			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
 		</div>
-		<div
-			class="bg-[#ffe15a] px-3 py-1 text-xs font-black tracking-[0.18em] text-[#171717] uppercase"
-		>
-			Live
-		</div>
+		<p class="text-sm font-black text-[var(--muted)]">
+			{pages.length} page{pages.length === 1 ? '' : 's'}
+		</p>
 	</div>
 
-	<div class="divide-y-2 divide-[#171717]">
+	<div class="divide-y-2 divide-[var(--ink)]">
 		{#if isLoading}
-			<div class="p-5 text-sm font-bold text-[#655f55]">Loading pages...</div>
+			<div class="p-5 text-sm font-bold text-[var(--muted)]">Loading pages...</div>
 		{:else if pages.length === 0}
 			<div class="p-5">
-				<p class="text-base font-black text-[#171717]">No pages yet</p>
-				<p class="mt-1 text-sm text-[#655f55]">
+				<p class="text-base font-black text-[var(--ink)]">No pages yet</p>
+				<p class="mt-1 text-sm text-[var(--muted)]">
 					Your first upload will appear here with a copyable link.
 				</p>
 			</div>
 		{:else}
 			{#each pages as page (page.slug)}
-				<article class="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+				<article
+					class="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center"
+					animate:flip={{ duration: 200 }}
+					transition:slide={{ duration: 200 }}
+				>
 					<div class="min-w-0">
 						<div class="flex flex-wrap items-center gap-2">
-							<h3 class="truncate text-base font-black text-[#171717]">{page.title}</h3>
-							<span class="bg-[#e8f7f1] px-2 py-1 text-xs font-black text-[#2c6e63]"
+							<h3 class="truncate text-base font-black text-[var(--ink)]">{page.title}</h3>
+							<span class="bg-[var(--soft-green)] px-2 py-1 text-xs font-black text-[var(--green)]"
 								>v{page.version}</span
 							>
 						</div>
 						<a
-							class="mt-2 block truncate text-sm font-bold text-[#2357c6] hover:underline"
+							class="mt-2 flex min-h-11 items-center gap-3 border-2 border-[var(--ink)] bg-[var(--panel)] px-3 py-2 text-sm font-bold text-[var(--link)] hover:bg-[var(--soft-green)] hover:no-underline"
 							href={resolve('/[slug]', { slug: page.slug })}
 							target="_blank"
 							rel="noreferrer"
 						>
-							{origin}/{page.slug}
+							<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
+							{#if copiedSlug === page.slug}
+								<span
+									class="shrink-0 text-xs font-black tracking-[0.14em] text-[var(--green)] uppercase"
+								>
+									Copied
+								</span>
+							{/if}
 						</a>
-						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-[#7b7468] uppercase">
+						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-[var(--subtle)] uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
 						</p>
 					</div>
 
 					<div class="flex gap-2">
-						<button
-							type="button"
-							class="grid size-10 place-items-center border-2 border-[#171717] bg-white hover:bg-[#ffe15a]"
-							aria-label="Copy public link"
-							title="Copy public link"
-							onclick={() => copyLink(page.slug)}
-						>
+						<IconButton label="Copy public link" onclick={() => copyLink(page.slug)}>
 							<Copy size={17} />
-						</button>
-						<a
-							class="grid size-10 place-items-center border-2 border-[#171717] bg-white hover:bg-[#e8f7f1]"
-							aria-label="Open public page"
-							title="Open public page"
+						</IconButton>
+						<IconButton
+							label="Open public page"
+							tone="green"
 							href={resolve('/[slug]', { slug: page.slug })}
 							target="_blank"
 							rel="noreferrer"
 						>
 							<ExternalLink size={17} />
-						</a>
-						<button
-							type="button"
-							class="grid size-10 place-items-center border-2 border-[#171717] bg-white hover:bg-[#fff0ea]"
-							aria-label="Delete page"
-							title="Delete page"
-							onclick={() => ondelete(page.slug)}
-						>
+						</IconButton>
+						<IconButton label="Delete page" tone="red" onclick={() => ondelete(page.slug)}>
 							<Trash2 size={17} />
-						</button>
+						</IconButton>
 					</div>
-
-					{#if copiedSlug === page.slug}
-						<p class="text-sm font-black text-[#2c6e63] md:col-span-2">Copied</p>
-					{/if}
 				</article>
 			{/each}
 		{/if}

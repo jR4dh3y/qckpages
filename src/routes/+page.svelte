@@ -1,59 +1,89 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import AuthLoadingShell from '$lib/components/AuthLoadingShell.svelte';
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
 	import PageList from '$lib/components/PageList.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import UploadPanel from '$lib/components/UploadPanel.svelte';
+	import { theme } from '$lib/client/theme.svelte';
 	import {
 		clearShooIdentity,
-		readShooIdentity,
+		readCachedShooSession,
+		readShooIdentityWhenReady,
 		ShooSessionError,
 		startShooSignIn,
-		verifyShooIdentity
+		verifyShooIdentity,
+		writeCachedShooSession
 	} from '$lib/client/shoo';
 	import type { PublicUser, PublishedPage, UploadResponse } from '$lib/types/pages';
+
+	type AuthStatus = 'checking' | 'signed-in' | 'signed-out';
 
 	let user = $state<PublicUser | null>(null);
 	let token = $state<string | null>(null);
 	let pages = $state<PublishedPage[]>([]);
-	let isCheckingAuth = $state(true);
+	let authStatus = $state<AuthStatus>('checking');
 	let isLoadingPages = $state(false);
 	let isUploading = $state(false);
 	let authError = $state<string | null>(null);
 	let pageError = $state<string | null>(null);
 	let origin = $state('');
+	let isCheckingAuth = $derived(authStatus === 'checking');
 
 	onMount(() => {
+		theme.init();
 		origin = window.location.origin;
+		const cached = readCachedShooSession();
+		if (cached) {
+			token = cached.token;
+			user = cached.user;
+			authStatus = 'signed-in';
+			isLoadingPages = true;
+		}
 		void hydrateShooSession();
 	});
 
 	async function hydrateShooSession(): Promise<void> {
-		isCheckingAuth = true;
+		if (!user) {
+			authStatus = 'checking';
+		}
 		authError = null;
 
 		try {
-			const identity = readShooIdentity();
+			const identity = await readShooIdentityWhenReady();
 			if (!identity?.token) {
+				if (!user) {
+					authStatus = 'signed-out';
+				}
 				return;
 			}
 
 			token = identity.token;
 			user = await verifyShooIdentity(identity.token);
+			authStatus = 'signed-in';
+			writeCachedShooSession({ token: identity.token, user });
 			await loadPages();
 		} catch (error) {
-			clearShooIdentity();
-			token = null;
-			user = null;
-
 			if (error instanceof ShooSessionError && error.code === 'session_expired') {
+				clearShooIdentity();
+				token = null;
+				user = null;
+				authStatus = 'signed-out';
 				startShooSignIn();
 				return;
 			}
 
 			authError = error instanceof Error ? error.message : 'Could not verify Shoo session';
+			if (!user) {
+				clearShooIdentity();
+				token = null;
+				authStatus = 'signed-out';
+			}
 		} finally {
-			isCheckingAuth = false;
+			if (authStatus === 'checking') {
+				authStatus = user ? 'signed-in' : 'signed-out';
+			}
 		}
 	}
 
@@ -83,9 +113,13 @@
 		}
 	}
 
-	async function publishPage(payload: { file: File; slug: string; title: string }): Promise<void> {
+	async function publishPage(payload: {
+		file: File;
+		slug: string;
+		title: string;
+	}): Promise<boolean> {
 		if (!token) {
-			return;
+			return false;
 		}
 
 		isUploading = true;
@@ -109,8 +143,10 @@
 
 			const body = (await response.json()) as UploadResponse;
 			pages = [body.page, ...pages.filter((page) => page.slug !== body.page.slug)];
+			return true;
 		} catch (error) {
 			pageError = error instanceof Error ? error.message : 'Could not publish page';
+			return false;
 		} finally {
 			isUploading = false;
 		}
@@ -123,6 +159,9 @@
 
 		pageError = null;
 
+		const previous = pages;
+		pages = pages.filter((page) => page.slug !== slug);
+
 		try {
 			const response = await fetch(`/api/pages/${slug}`, {
 				method: 'DELETE',
@@ -130,11 +169,11 @@
 			});
 
 			if (!response.ok) {
+				pages = previous;
 				throw new Error(await readApiError(response, 'Could not delete page'));
 			}
-
-			pages = pages.filter((page) => page.slug !== slug);
 		} catch (error) {
+			pages = previous;
 			pageError = error instanceof Error ? error.message : 'Could not delete page';
 		}
 	}
@@ -144,6 +183,7 @@
 		token = null;
 		user = null;
 		pages = [];
+		authStatus = 'signed-out';
 	}
 
 	async function readApiError(response: Response, fallback: string): Promise<string> {
@@ -157,24 +197,26 @@
 	<meta name="description" content="Upload an HTML file and turn it into a shareable link." />
 </svelte:head>
 
-{#if user}
-	<div class="min-h-dvh bg-[#f7f3ea] text-[#171717]">
-		<DashboardHeader {user} onsignout={signOut} />
+{#if authStatus === 'signed-in' && user}
+	<div class="min-h-dvh bg-[var(--paper)] text-[var(--ink)]">
+		<DashboardHeader {user} onsignout={signOut}>
+			<ThemeToggle />
+		</DashboardHeader>
 
 		<main class="mx-auto grid max-w-6xl gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]">
-			<div class="space-y-5">
-				<section class="border-2 border-[#171717] bg-[#171717] p-5 text-white">
-					<p class="text-xs font-black tracking-[0.22em] text-[#ffe15a] uppercase">Publisher</p>
-					<h1 class="mt-3 text-3xl leading-none font-black">Your pages live here.</h1>
-					<p class="mt-3 text-sm leading-6 text-[#d9d2c5]">No builds, no branches, no waiting.</p>
-				</section>
-
+			<div>
 				<UploadPanel {isUploading} error={pageError} onpublish={publishPage} />
 			</div>
 
 			<PageList {pages} {origin} isLoading={isLoadingPages} ondelete={deletePage} />
 		</main>
 	</div>
+{:else if authStatus === 'checking' || authStatus === 'signed-in'}
+	<AuthLoadingShell>
+		<ThemeToggle />
+	</AuthLoadingShell>
 {:else}
-	<AuthPanel isLoading={isCheckingAuth} error={authError} onsignin={startShooSignIn} />
+	<AuthPanel isLoading={isCheckingAuth} error={authError} onsignin={startShooSignIn}>
+		<ThemeToggle />
+	</AuthPanel>
 {/if}

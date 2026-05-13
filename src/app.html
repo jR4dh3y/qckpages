@@ -4,6 +4,18 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			(() => {
+				try {
+					const stored = window.localStorage.getItem('qckpages-theme');
+					const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+					document.documentElement.dataset.theme =
+						stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
+				} catch {
+					document.documentElement.dataset.theme = 'light';
+				}
+			})();
+		</script>
 		<script src="https://shoo.dev/shoo.js" defer></script>
 		%sveltekit.head%
 	</head>

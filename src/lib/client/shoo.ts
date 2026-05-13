@@ -20,15 +20,78 @@ declare global {
 	}
 }
 
+export interface CachedShooSession {
+	token: string;
+	user: PublicUser;
+}
+
+const sessionCacheKey = 'qckpages-shoo-session';
+
+async function waitForShooClient(timeoutMs = 2000): Promise<ShooClient | undefined> {
+	const startedAt = performance.now();
+
+	while (!window.Shoo && performance.now() - startedAt < timeoutMs) {
+		await new Promise((resolve) => window.setTimeout(resolve, 25));
+	}
+
+	return window.Shoo;
+}
+
 export function readShooIdentity(): ShooIdentity | null {
 	return window.Shoo?.getIdentity() ?? null;
 }
 
-export function startShooSignIn(): void {
-	window.Shoo?.startSignIn({ returnTo: '/', requestPii: true });
+export async function readShooIdentityWhenReady(): Promise<ShooIdentity | null> {
+	await waitForShooClient();
+	return readShooIdentity();
+}
+
+export function readCachedShooSession(): CachedShooSession | null {
+	const raw = window.sessionStorage.getItem(sessionCacheKey);
+	if (!raw) {
+		return null;
+	}
+
+	try {
+		const cached = JSON.parse(raw) as Partial<CachedShooSession>;
+		if (
+			typeof cached.token !== 'string' ||
+			!cached.user ||
+			typeof cached.user.userId !== 'string'
+		) {
+			return null;
+		}
+
+		return {
+			token: cached.token,
+			user: {
+				userId: cached.user.userId,
+				email: typeof cached.user.email === 'string' ? cached.user.email : undefined,
+				name: typeof cached.user.name === 'string' ? cached.user.name : undefined,
+				picture: typeof cached.user.picture === 'string' ? cached.user.picture : undefined
+			}
+		};
+	} catch {
+		window.sessionStorage.removeItem(sessionCacheKey);
+		return null;
+	}
+}
+
+export function writeCachedShooSession(session: CachedShooSession): void {
+	window.sessionStorage.setItem(sessionCacheKey, JSON.stringify(session));
+}
+
+export function clearCachedShooSession(): void {
+	window.sessionStorage.removeItem(sessionCacheKey);
+}
+
+export async function startShooSignIn(): Promise<void> {
+	const shoo = await waitForShooClient();
+	shoo?.startSignIn({ returnTo: '/', requestPii: true });
 }
 
 export function clearShooIdentity(): void {
+	clearCachedShooSession();
 	window.Shoo?.clearIdentity();
 }
 

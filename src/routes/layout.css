@@ -4,16 +4,53 @@
 
 :root {
 	font-family: 'Aptos', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+	--paper: #f7f3ea;
+	--panel: #fffdf7;
+	--ink: #171717;
+	--muted: #655f55;
+	--muted-on-ink: #d9d2c5;
+	--line: #d7d0c3;
+	--accent: #ffe15a;
+	--green: #2c6e63;
+	--hot: #d45c2c;
+	--danger: #9a3412;
+	--danger-bg: #fff0ea;
+	--danger-line: #ef9b82;
+	--soft-green: #e8f7f1;
+	--soft-line: #b7ad9c;
+	--link: #2357c6;
+	--subtle: #7b7468;
 	background: #f7f3ea;
 	color: #171717;
+}
+
+:root[data-theme='dark'] {
+	--paper: #11100d;
+	--panel: #1d1b17;
+	--ink: #f4efe3;
+	--muted: #bdb3a4;
+	--muted-on-ink: #4b463d;
+	--line: #403a31;
+	--accent: #ffe15a;
+	--green: #55b7a5;
+	--hot: #ff875c;
+	--danger: #ffb199;
+	--danger-bg: #341b14;
+	--danger-line: #8b3e29;
+	--soft-green: #17362f;
+	--soft-line: #5a5145;
+	--link: #86aaff;
+	--subtle: #938979;
+	color-scheme: dark;
 }
 
 body {
 	min-height: 100dvh;
 	margin: 0;
 	background:
-		linear-gradient(rgba(23, 23, 23, 0.035) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(23, 23, 23, 0.035) 1px, transparent 1px), #f7f3ea;
+		linear-gradient(color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px),
+		linear-gradient(90deg, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px),
+		var(--paper);
 	background-size: 32px 32px;
 }
 

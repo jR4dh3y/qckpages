@@ -36,15 +36,15 @@
 		display: grid;
 		grid-template-columns: repeat(var(--columns), var(--tile-size));
 		grid-auto-rows: var(--tile-size);
-		background: #f7f3ea;
+		background: var(--paper);
 		overflow: hidden;
 		pointer-events: auto;
 	}
 
 	.tile {
 		position: relative;
-		border-right: 1px solid rgba(23, 23, 23, 0.07);
-		border-bottom: 1px solid rgba(23, 23, 23, 0.07);
+		border-right: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
 		background: transparent;
 		transition:
 			background-color 160ms ease,
@@ -67,12 +67,12 @@
 	.tile:hover {
 		z-index: 1;
 		background: var(--tile-color);
-		box-shadow: 4px 4px 0 #171717;
+		box-shadow: 4px 4px 0 var(--ink);
 		transform: translate(-1px, -1px);
 	}
 
 	.tile:hover::after {
-		border-color: #171717;
+		border-color: var(--ink);
 		background: rgba(255, 255, 255, 0.18);
 		transform: rotate(4deg);
 	}
