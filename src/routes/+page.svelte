@@ -9,6 +9,7 @@
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
 	import PageList from '$lib/components/PageList.svelte';
 	import PlanBadge from '$lib/components/PlanBadge.svelte';
+	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
 	import UploadPanel from '$lib/components/UploadPanel.svelte';
 	import { authClient, openCustomerPortal, startProCheckout } from '$lib/auth-client';
@@ -27,6 +28,7 @@
 
 	let isUploading = $state(false);
 	let isBillingLoading = $state(false);
+	let showPlanModal = $state(false);
 	let authError = $state<string | null>(null);
 	let pageError = $state<string | null>(null);
 	let origin = $state('');
@@ -114,7 +116,12 @@
 		await authClient.signOut();
 	}
 
+	function openPlanModal(): void {
+		showPlanModal = true;
+	}
+
 	async function upgrade(): Promise<void> {
+		showPlanModal = false;
 		await runBillingAction(startProCheckout);
 	}
 
@@ -241,12 +248,12 @@
 
 {#if auth.isAuthenticated && user}
 	<div class="flex h-dvh flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
-		<DashboardHeader {user} onsignout={signOut}>
+		<DashboardHeader {user} {usageLabel} onsignout={signOut}>
 			<PlanBadge tier={entitlement.tier} />
 			{#if isPro && hasBillingPortal}
 				<UpgradeButton kind="portal" isLoading={isBillingLoading} onclick={openPortal} />
 			{:else if !isPro}
-				<UpgradeButton isLoading={isBillingLoading} onclick={upgrade} />
+				<UpgradeButton isLoading={isBillingLoading} onclick={openPlanModal} />
 			{/if}
 		</DashboardHeader>
 
@@ -260,7 +267,7 @@
 					{publishedSlugs}
 					error={pageError}
 					onpublish={publishPage}
-					onupgrade={upgrade}
+					onupgrade={openPlanModal}
 				/>
 			</div>
 
@@ -275,6 +282,14 @@
 
 		<AppFooter />
 	</div>
+
+	{#if showPlanModal && !isPro}
+		<PlanComparisonModal
+			isLoading={isBillingLoading}
+			onupgrade={upgrade}
+			onclose={() => (showPlanModal = false)}
+		/>
+	{/if}
 {:else if auth.isLoading || (auth.isAuthenticated && !user)}
 	<AuthLoadingShell />
 {:else}
