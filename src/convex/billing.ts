@@ -142,7 +142,7 @@ export const grantManualPro = mutation({
 		await upsertEntitlement(ctx, {
 			userId: args.userId,
 			tier: 'pro',
-			status: 'manual_grant'
+			status: 'active'
 		});
 
 		return await getEntitlementByUserId(ctx, args.userId);
