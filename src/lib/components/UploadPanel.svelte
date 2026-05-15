@@ -70,7 +70,7 @@
 	}
 </script>
 
-<section class="border-2 border-[var(--ink)] bg-[var(--panel)] shadow-[6px_6px_0_var(--ink)]">
+<section class="border-2 border-[var(--ink)] bg-[var(--panel)]">
 	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-3">
 		<div>
 			<h2 class="text-lg font-black text-[var(--ink)]">New page</h2>

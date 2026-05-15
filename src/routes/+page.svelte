@@ -8,7 +8,6 @@
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
 	import PageList from '$lib/components/PageList.svelte';
-	import PlanBadge from '$lib/components/PlanBadge.svelte';
 	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
 	import UploadPanel from '$lib/components/UploadPanel.svelte';
@@ -248,13 +247,12 @@
 
 {#if auth.isAuthenticated && user}
 	<div class="flex h-dvh flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
-		<DashboardHeader {user} {usageLabel} onsignout={signOut}>
-			<PlanBadge tier={entitlement.tier} />
-			{#if isPro && hasBillingPortal}
-				<UpgradeButton kind="portal" isLoading={isBillingLoading} onclick={openPortal} />
-			{:else if !isPro}
-				<UpgradeButton isLoading={isBillingLoading} onclick={openPlanModal} />
-			{/if}
+		<DashboardHeader
+			{user}
+			onsignout={signOut}
+			onbilling={isPro && hasBillingPortal ? openPortal : undefined}
+		>
+			<UpgradeButton {isPro} isLoading={isBillingLoading} onclick={openPlanModal} />
 		</DashboardHeader>
 
 		<main

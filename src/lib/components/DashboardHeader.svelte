@@ -1,18 +1,17 @@
 <script lang="ts">
-	import { LogOut, ChevronDown } from 'lucide-svelte';
-	import { resolve } from '$app/paths';
+	import { LogOut, ChevronDown, Settings } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import UserAvatar from './UserAvatar.svelte';
 	import type { PublicUser } from '$lib/types/pages';
 
 	interface Props {
 		user: PublicUser;
-		usageLabel: string;
 		onsignout: () => void;
+		onbilling?: () => void | Promise<void>;
 		children?: Snippet;
 	}
 
-	let { user, usageLabel, onsignout, children }: Props = $props();
+	let { user, onsignout, onbilling, children }: Props = $props();
 	let displayName = $derived(user.name ?? user.email ?? 'Signed in');
 	let email = $derived(user.name ? user.email : undefined);
 
@@ -39,26 +38,18 @@
 <header class="border-b-2 border-[var(--ink)] bg-[var(--panel)]">
 	<div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5 sm:px-6">
 		<!-- Logo -->
-		<a
-			href={resolve('/')}
-			class="inline-flex h-10 shrink-0 items-center border-2 border-[var(--ink)] bg-[var(--accent)] px-3 text-lg font-black text-[#171717] shadow-[3px_3px_0_var(--ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0_var(--ink)]"
+		<span
+			class="inline-flex h-10 shrink-0 items-center border-2 border-[var(--ink)] bg-[var(--accent)] px-3 text-lg font-black text-[#171717]"
 		>
 			QckPages
-		</a>
+		</span>
 
 		<!-- Spacer -->
 		<div class="min-w-0 flex-1"></div>
 
 		<!-- Right side controls -->
 		<div class="flex items-center gap-2.5">
-			<!-- Usage pill -->
-			<span
-				class="hidden items-center border border-[var(--soft-line)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-bold text-[var(--muted)] sm:inline-flex"
-			>
-				{usageLabel}
-			</span>
-
-			<!-- Plan + Upgrade (slotted from parent) -->
+			<!-- Upgrade / Billing (slotted from parent) -->
 			{@render children?.()}
 
 			<!-- Separator -->
@@ -87,7 +78,7 @@
 
 				{#if userMenuOpen}
 					<div
-						class="absolute top-full right-0 z-40 mt-1 w-56 border-2 border-[var(--ink)] bg-[var(--panel)] shadow-[4px_4px_0_var(--ink)]"
+						class="absolute top-full right-0 z-40 mt-1 w-56 border-2 border-[var(--ink)] bg-[var(--panel)]"
 					>
 						<div class="border-b border-[var(--line)] px-4 py-3">
 							<p class="truncate text-sm font-black text-[var(--ink)]">{displayName}</p>
@@ -96,6 +87,19 @@
 							{/if}
 						</div>
 						<div class="p-1.5">
+							{#if onbilling}
+								<button
+									type="button"
+									class="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-bold text-[var(--ink)] transition hover:bg-[var(--paper)]"
+									onclick={() => {
+										userMenuOpen = false;
+										onbilling?.();
+									}}
+								>
+									<Settings size={15} />
+									Billing
+								</button>
+							{/if}
 							<button
 								type="button"
 								class="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-bold text-[var(--ink)] transition hover:bg-[var(--paper)]"

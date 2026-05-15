@@ -26,9 +26,7 @@
 		class="pointer-events-none relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center px-5 py-10"
 	>
 		<div class="grid gap-8 lg:grid-cols-[1fr_380px] lg:items-end">
-			<div
-				class="pointer-events-auto border-2 border-[var(--ink)] bg-[var(--panel)] p-6 shadow-[10px_10px_0_var(--ink)]"
-			>
+			<div class="pointer-events-auto border-2 border-[var(--ink)] bg-[var(--panel)] p-6">
 				<p class="text-xs font-black tracking-[0.3em] text-[var(--hot)] uppercase">QckPages</p>
 				<h1 class="mt-5 max-w-3xl text-5xl leading-[0.95] font-black text-[var(--ink)] md:text-7xl">
 					Share an HTML page in seconds.
@@ -38,9 +36,7 @@
 				</p>
 			</div>
 
-			<div
-				class="pointer-events-auto border-2 border-[var(--ink)] bg-[var(--panel)] p-5 shadow-[10px_10px_0_var(--ink)]"
-			>
+			<div class="pointer-events-auto border-2 border-[var(--ink)] bg-[var(--panel)] p-5">
 				<div class="border-b border-[var(--line)] pb-5">
 					<div>
 						<h2 class="text-xl font-black text-[var(--ink)]">Sign in</h2>

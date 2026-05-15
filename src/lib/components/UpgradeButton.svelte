@@ -1,22 +1,30 @@
 <script lang="ts">
-	import { CreditCard, Settings } from 'lucide-svelte';
-	import TextButton from './TextButton.svelte';
+	import { ArrowUpRight, Crown } from 'lucide-svelte';
 
 	interface Props {
-		kind?: 'upgrade' | 'portal';
+		isPro?: boolean;
 		isLoading?: boolean;
 		onclick: () => void | Promise<void>;
 	}
 
-	let { kind = 'upgrade', isLoading = false, onclick }: Props = $props();
-	let label = $derived(kind === 'portal' ? 'Billing' : 'Upgrade Pro');
+	let { isPro = false, isLoading = false, onclick }: Props = $props();
 </script>
 
-<TextButton tone="green" {isLoading} {onclick}>
-	{#if kind === 'portal'}
-		<Settings size={15} />
-	{:else}
-		<CreditCard size={15} />
-	{/if}
-	{label}
-</TextButton>
+{#if isPro}
+	<span
+		class="inline-flex items-center gap-1.5 border-2 border-[var(--green)] px-3 py-1.5 text-sm font-black text-[var(--green)]"
+	>
+		<Crown size={14} />
+		Pro
+	</span>
+{:else}
+	<button
+		type="button"
+		class="inline-flex items-center gap-1.5 border-2 border-[var(--ink)] bg-[var(--green)] px-3 py-1.5 text-sm font-black text-white transition hover:bg-[var(--ink)] disabled:cursor-wait disabled:opacity-50"
+		disabled={isLoading}
+		onclick={() => void onclick()}
+	>
+		<ArrowUpRight size={14} />
+		Upgrade
+	</button>
+{/if}
