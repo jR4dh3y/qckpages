@@ -2,6 +2,7 @@
 	import { LogIn } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import AppFooter from './AppFooter.svelte';
+	import TextButton from './TextButton.svelte';
 	import TileField from './TileField.svelte';
 
 	interface Props {
@@ -49,15 +50,12 @@
 					</div>
 				</div>
 
-				<button
-					type="button"
-					class="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-[var(--ink)] px-4 text-sm font-black text-[var(--paper)] transition hover:bg-[var(--green)] disabled:cursor-wait disabled:bg-[var(--muted)]"
-					disabled={isLoading}
-					onclick={() => void onsignin()}
-				>
-					<LogIn size={18} />
-					{isLoading ? 'Checking session' : 'Continue with Google'}
-				</button>
+				<div class="mt-5">
+					<TextButton tone="solid" size="lg" fullWidth {isLoading} onclick={onsignin}>
+						<LogIn size={18} />
+						{isLoading ? 'Checking session' : 'Continue with Google'}
+					</TextButton>
+				</div>
 
 				{#if error}
 					<p

@@ -34,6 +34,8 @@ export interface Entitlement {
 	razorpayCustomerId?: string;
 	razorpaySubscriptionId?: string;
 	razorpaySubscriptionShortUrl?: string;
+	razorpayOrderId?: string;
+	razorpayPaymentId?: string;
 	currentPeriodEnd?: string;
 	updatedAt: string;
 }

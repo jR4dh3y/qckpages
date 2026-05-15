@@ -28,6 +28,8 @@ export default defineSchema({
 		razorpayCustomerId: v.optional(v.string()),
 		razorpaySubscriptionId: v.optional(v.string()),
 		razorpaySubscriptionShortUrl: v.optional(v.string()),
+		razorpayOrderId: v.optional(v.string()),
+		razorpayPaymentId: v.optional(v.string()),
 		currentPeriodEnd: v.optional(v.string()),
 		updatedAt: v.string()
 	}).index('by_userId', ['userId'])

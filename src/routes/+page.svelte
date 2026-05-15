@@ -9,11 +9,9 @@
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
 	import PageList from '$lib/components/PageList.svelte';
 	import PlanBadge from '$lib/components/PlanBadge.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
 	import UploadPanel from '$lib/components/UploadPanel.svelte';
 	import { authClient, openCustomerPortal, startProCheckout } from '$lib/auth-client';
-	import { theme } from '$lib/client/theme.svelte';
 	import type { Entitlement, PublicUser, PublishedPage, UploadResponse } from '$lib/types/pages';
 
 	const auth = useAuth();
@@ -44,10 +42,10 @@
 	);
 	let isPro = $derived(entitlement.tier === 'pro' && entitlement.status === 'active');
 	let isQuotaBlocked = $derived(!isPro && publishedCount >= 5);
+	let hasBillingPortal = $derived(Boolean(entitlement.razorpaySubscriptionShortUrl));
 	let usageLabel = $derived(isPro ? 'Unlimited pages' : `${publishedCount} / 5 pages`);
 
 	onMount(() => {
-		theme.init();
 		origin = window.location.origin;
 	});
 
@@ -194,6 +192,8 @@
 			razorpayCustomerId?: unknown;
 			razorpaySubscriptionId?: unknown;
 			razorpaySubscriptionShortUrl?: unknown;
+			razorpayOrderId?: unknown;
+			razorpayPaymentId?: unknown;
 			currentPeriodEnd?: unknown;
 			updatedAt?: unknown;
 		};
@@ -214,6 +214,14 @@
 				typeof entitlementValue.razorpaySubscriptionShortUrl === 'string'
 					? entitlementValue.razorpaySubscriptionShortUrl
 					: undefined,
+			razorpayOrderId:
+				typeof entitlementValue.razorpayOrderId === 'string'
+					? entitlementValue.razorpayOrderId
+					: undefined,
+			razorpayPaymentId:
+				typeof entitlementValue.razorpayPaymentId === 'string'
+					? entitlementValue.razorpayPaymentId
+					: undefined,
 			currentPeriodEnd:
 				typeof entitlementValue.currentPeriodEnd === 'string'
 					? entitlementValue.currentPeriodEnd
@@ -233,18 +241,17 @@
 
 {#if auth.isAuthenticated && user}
 	<div class="flex h-dvh flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
-		<DashboardHeader {user} {usageLabel} onsignout={signOut}>
+		<DashboardHeader {user} onsignout={signOut}>
 			<PlanBadge tier={entitlement.tier} />
-			{#if isPro}
+			{#if isPro && hasBillingPortal}
 				<UpgradeButton kind="portal" isLoading={isBillingLoading} onclick={openPortal} />
-			{:else}
+			{:else if !isPro}
 				<UpgradeButton isLoading={isBillingLoading} onclick={upgrade} />
 			{/if}
-			<ThemeToggle />
 		</DashboardHeader>
 
 		<main
-			class="mx-auto grid min-h-0 w-full max-w-6xl flex-1 gap-7 px-5 py-7 lg:grid-cols-[420px_1fr]"
+			class="mx-auto grid min-h-0 w-full max-w-7xl flex-1 gap-4 px-4 py-4 lg:grid-cols-[400px_minmax(0,1fr)]"
 		>
 			<div class="self-start">
 				<UploadPanel
@@ -269,11 +276,7 @@
 		<AppFooter />
 	</div>
 {:else if auth.isLoading || (auth.isAuthenticated && !user)}
-	<AuthLoadingShell>
-		<ThemeToggle />
-	</AuthLoadingShell>
+	<AuthLoadingShell />
 {:else}
-	<AuthPanel isLoading={auth.isLoading} error={authError} onsignin={signInWithGoogle}>
-		<ThemeToggle />
-	</AuthPanel>
+	<AuthPanel isLoading={auth.isLoading} error={authError} onsignin={signInWithGoogle} />
 {/if}

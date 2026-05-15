@@ -59,6 +59,23 @@ export const markCurrentUserRazorpayProActive = mutation({
 	}
 });
 
+export const markCurrentUserRazorpayOrderPaid = mutation({
+	args: {
+		razorpayOrderId: v.string(),
+		razorpayPaymentId: v.string()
+	},
+	handler: async (ctx, args) => {
+		const user = await requireCurrentUser(ctx);
+		await upsertEntitlement(ctx, {
+			userId: authUserId(user),
+			tier: 'pro',
+			status: 'active',
+			razorpayOrderId: args.razorpayOrderId,
+			razorpayPaymentId: args.razorpayPaymentId
+		});
+	}
+});
+
 export const markRazorpayProActive = internalMutation({
 	args: {
 		userId: v.string(),
@@ -127,6 +144,8 @@ async function upsertEntitlement(
 		razorpayCustomerId?: string;
 		razorpaySubscriptionId?: string;
 		razorpaySubscriptionShortUrl?: string;
+		razorpayOrderId?: string;
+		razorpayPaymentId?: string;
 		currentPeriodEnd?: string;
 	}
 ): Promise<void> {
@@ -153,6 +172,8 @@ async function markFree(ctx: MutationCtx, userId: string): Promise<void> {
 		razorpayCustomerId: existing?.razorpayCustomerId,
 		razorpaySubscriptionId: existing?.razorpaySubscriptionId,
 		razorpaySubscriptionShortUrl: existing?.razorpaySubscriptionShortUrl,
+		razorpayOrderId: existing?.razorpayOrderId,
+		razorpayPaymentId: existing?.razorpayPaymentId,
 		currentPeriodEnd: undefined
 	});
 }

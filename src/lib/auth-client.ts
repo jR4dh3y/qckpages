@@ -7,13 +7,15 @@ export const authClient = createAuthClient({
 
 interface RazorpayCheckoutResponse {
 	razorpay_payment_id: string;
-	razorpay_subscription_id: string;
+	razorpay_order_id: string;
 	razorpay_signature: string;
 }
 
 interface RazorpayCheckoutOptions {
 	key: string;
-	subscription_id: string;
+	order_id: string;
+	amount: number;
+	currency: string;
 	name: string;
 	description: string;
 	handler: (response: RazorpayCheckoutResponse) => void;
@@ -30,9 +32,17 @@ interface RazorpayCheckoutOptions {
 	};
 }
 
+interface RazorpayPaymentFailedResponse {
+	error?: {
+		description?: string;
+		reason?: string;
+	};
+}
+
 interface RazorpayConstructor {
 	new (options: RazorpayCheckoutOptions): {
 		open(): void;
+		on(event: 'payment.failed', callback: (response: RazorpayPaymentFailedResponse) => void): void;
 	};
 }
 
@@ -47,17 +57,25 @@ let razorpayScriptPromise: Promise<void> | null = null;
 export async function startProCheckout(): Promise<void> {
 	await loadRazorpayScript();
 
-	const response = await fetch('/api/billing/razorpay/subscription', {
-		method: 'POST'
+	const response = await fetch('/api/create-order', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			amount: 14900,
+			currency: 'INR',
+			receipt: `qckpages_pro_${Date.now()}`
+		})
 	});
 
 	if (!response.ok) {
 		throw new Error(await readApiError(response, 'Could not start checkout'));
 	}
 
-	const subscription = (await response.json()) as {
-		keyId: string;
-		subscriptionId: string;
+	const order = (await response.json()) as {
+		key_id: string;
+		order_id: string;
+		amount: number;
+		currency: string;
 		userId: string;
 		name?: string;
 		email?: string;
@@ -70,26 +88,32 @@ export async function startProCheckout(): Promise<void> {
 
 	await new Promise<void>((resolve, reject) => {
 		const checkout = new Razorpay({
-			key: subscription.keyId,
-			subscription_id: subscription.subscriptionId,
+			key: order.key_id,
+			order_id: order.order_id,
+			amount: order.amount,
+			currency: order.currency,
 			name: 'QckPages Pro',
-			description: 'Unlimited pages at Rs.149/month',
+			description: 'Unlimited pages',
 			prefill: {
-				name: subscription.name,
-				email: subscription.email
+				name: order.name,
+				email: order.email
 			},
 			notes: {
-				userId: subscription.userId
+				userId: order.userId
 			},
 			theme: {
 				color: '#22c55e'
 			},
 			handler: (payment) => {
-				void confirmRazorpaySubscription(payment).then(resolve, reject);
+				void verifyRazorpayPayment(payment).then(resolve, reject);
 			},
 			modal: {
 				ondismiss: () => reject(new Error('Checkout was closed before payment completed'))
 			}
+		});
+
+		checkout.on('payment.failed', (response) => {
+			reject(new Error(response.error?.description ?? response.error?.reason ?? 'Payment failed'));
 		});
 
 		checkout.open();
@@ -113,8 +137,8 @@ export async function openCustomerPortal(): Promise<void> {
 	window.location.href = body.url;
 }
 
-async function confirmRazorpaySubscription(payment: RazorpayCheckoutResponse): Promise<void> {
-	const response = await fetch('/api/billing/razorpay/confirm', {
+async function verifyRazorpayPayment(payment: RazorpayCheckoutResponse): Promise<void> {
+	const response = await fetch('/api/verify-payment', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(payment)

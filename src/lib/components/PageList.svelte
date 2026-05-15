@@ -29,9 +29,9 @@
 </script>
 
 <section
-	class="flex max-h-[min(680px,calc(100dvh-12rem))] min-h-0 flex-col self-start border-2 border-[var(--ink)] bg-[var(--panel)]"
+	class="flex max-h-[min(720px,calc(100dvh-9rem))] min-h-0 flex-col self-start border-2 border-[var(--ink)] bg-[var(--panel)]"
 >
-	<div class="flex shrink-0 items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
+	<div class="flex shrink-0 items-center justify-between border-b-2 border-[var(--ink)] px-5 py-3">
 		<div>
 			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
 		</div>
@@ -47,7 +47,7 @@
 			<div class="p-5">
 				<p class="text-base font-black text-[var(--ink)]">No pages yet</p>
 				<p class="mt-1 text-sm text-[var(--muted)]">
-					Your first upload will appear here with a copyable link.
+					Upload an HTML file to publish your first link.
 				</p>
 			</div>
 		{:else}

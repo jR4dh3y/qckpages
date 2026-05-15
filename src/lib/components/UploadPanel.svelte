@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { FileUp, Send, X } from 'lucide-svelte';
 	import IconButton from './IconButton.svelte';
+	import TextButton from './TextButton.svelte';
 	import UpgradeButton from './UpgradeButton.svelte';
 	import { normalizeSlug, titleFromFilename } from '$lib/utils/slug';
 
@@ -69,14 +70,14 @@
 	}
 </script>
 
-<section class="border-2 border-[var(--ink)] bg-[var(--panel)] shadow-[8px_8px_0_var(--ink)]">
-	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-4">
+<section class="border-2 border-[var(--ink)] bg-[var(--panel)] shadow-[6px_6px_0_var(--ink)]">
+	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-3">
 		<div>
 			<h2 class="text-lg font-black text-[var(--ink)]">New page</h2>
 		</div>
 	</div>
 
-	<div class="space-y-5 p-5">
+	<div class="space-y-4 p-5">
 		<input
 			id={fileInputId}
 			class="sr-only"
@@ -89,7 +90,7 @@
 			role="group"
 			aria-label="HTML file upload"
 			class={[
-				'grid min-h-44 place-items-center border-2 border-dashed p-5 text-center transition',
+				'grid min-h-36 place-items-center border-2 border-dashed p-5 text-center transition',
 				!selectedFile && 'cursor-pointer',
 				isDragging
 					? 'border-[var(--green)] bg-[var(--soft-green)]'
@@ -160,15 +161,16 @@
 			</label>
 		</div>
 
-		<button
-			type="button"
-			class="flex h-12 w-full items-center justify-center gap-2 bg-[var(--ink)] px-4 text-sm font-black text-[var(--paper)] transition hover:bg-[var(--green)] disabled:cursor-not-allowed disabled:bg-[var(--muted)]"
+		<TextButton
+			tone="solid"
+			size="lg"
+			fullWidth
 			disabled={!selectedFile || isUploading || isPublishBlocked}
 			onclick={publish}
 		>
 			<Send size={17} />
 			{isUploading ? 'Publishing' : 'Publish page'}
-		</button>
+		</TextButton>
 
 		{#if isPublishBlocked}
 			<div
