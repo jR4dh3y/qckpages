@@ -9,7 +9,7 @@
 	let { children }: Props = $props();
 </script>
 
-<section class="relative flex min-h-dvh flex-col bg-[var(--paper)] text-[var(--ink)]">
+<section class="relative flex min-h-dvh flex-col bg-(--paper) text-(--ink)">
 	<div class="pointer-events-auto fixed top-5 right-5 z-20">
 		{@render children?.()}
 	</div>

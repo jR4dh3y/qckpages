@@ -246,7 +246,7 @@
 </svelte:head>
 
 {#if auth.isAuthenticated && user}
-	<div class="flex h-dvh flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
+	<div class="flex h-dvh flex-col overflow-hidden bg-(--paper) text-(--ink)">
 		<DashboardHeader
 			{user}
 			onsignout={signOut}

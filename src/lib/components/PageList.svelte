@@ -29,26 +29,24 @@
 </script>
 
 <section
-	class="flex max-h-[min(720px,calc(100dvh-9rem))] min-h-0 flex-col self-start border-2 border-[var(--ink)] bg-[var(--panel)]"
+	class="flex max-h-[min(720px,calc(100dvh-9rem))] min-h-0 flex-col self-start border-2 border-(--ink) bg-(--panel)"
 >
-	<div class="flex shrink-0 items-center justify-between border-b-2 border-[var(--ink)] px-5 py-3">
+	<div class="flex shrink-0 items-center justify-between border-b-2 border-(--ink) px-5 py-3">
 		<div>
-			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
+			<h2 class="text-lg font-black text-(--ink)">Published</h2>
 		</div>
-		<p class="text-sm font-black text-[var(--muted)]">
+		<p class="text-sm font-black text-(--muted)">
 			{usageLabel}
 		</p>
 	</div>
 
-	<div class="hidden-scrollbar min-h-0 divide-y-2 divide-[var(--ink)] overflow-y-auto">
+	<div class="hidden-scrollbar min-h-0 divide-y-2 divide-(--ink) overflow-y-auto">
 		{#if isLoading}
-			<div class="p-5 text-sm font-bold text-[var(--muted)]">Loading pages...</div>
+			<div class="p-5 text-sm font-bold text-(--muted)">Loading pages...</div>
 		{:else if pages.length === 0}
 			<div class="p-5">
-				<p class="text-base font-black text-[var(--ink)]">No pages yet</p>
-				<p class="mt-1 text-sm text-[var(--muted)]">
-					Upload an HTML file to publish your first link.
-				</p>
+				<p class="text-base font-black text-(--ink)">No pages yet</p>
+				<p class="mt-1 text-sm text-(--muted)">Upload an HTML file to publish your first link.</p>
 			</div>
 		{:else}
 			{#each pages as page (page.slug)}
@@ -59,21 +57,19 @@
 				>
 					<div class="min-w-0">
 						<div class="flex flex-wrap items-center gap-2">
-							<h3 class="truncate text-base font-black text-[var(--ink)]">{page.title}</h3>
-							<span class="bg-[var(--soft-green)] px-2 py-1 text-xs font-black text-[var(--green)]"
+							<h3 class="truncate text-base font-black text-(--ink)">{page.title}</h3>
+							<span class="bg-(--soft-green) px-2 py-1 text-xs font-black text-(--green)"
 								>v{page.version}</span
 							>
 							{#if !page.published || page.lockedReason}
-								<span
-									class="bg-[var(--danger-bg)] px-2 py-1 text-xs font-black text-[var(--danger)]"
-								>
+								<span class="bg-(--danger-bg) px-2 py-1 text-xs font-black text-(--danger)">
 									Locked
 								</span>
 							{/if}
 						</div>
 						{#if page.published && !page.lockedReason}
 							<a
-								class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-[var(--link)] hover:underline"
+								class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-(--link) hover:underline"
 								href={resolve('/[slug]', { slug: page.slug })}
 								target="_blank"
 								rel="noreferrer"
@@ -81,9 +77,9 @@
 								<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
 							</a>
 						{:else}
-							<p class="mt-2 text-sm font-bold text-[var(--muted)]">{origin}/{page.slug}</p>
+							<p class="mt-2 text-sm font-bold text-(--muted)">{origin}/{page.slug}</p>
 						{/if}
-						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-[var(--subtle)] uppercase">
+						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-(--subtle) uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
 						</p>
 					</div>

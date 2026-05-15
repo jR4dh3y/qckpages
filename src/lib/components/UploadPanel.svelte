@@ -70,10 +70,10 @@
 	}
 </script>
 
-<section class="border-2 border-[var(--ink)] bg-[var(--panel)]">
-	<div class="flex items-center justify-between border-b-2 border-[var(--ink)] px-5 py-3">
+<section class="border-2 border-(--ink) bg-(--panel)">
+	<div class="flex items-center justify-between border-b-2 border-(--ink) px-5 py-3">
 		<div>
-			<h2 class="text-lg font-black text-[var(--ink)]">New page</h2>
+			<h2 class="text-lg font-black text-(--ink)">New page</h2>
 		</div>
 	</div>
 
@@ -92,9 +92,7 @@
 			class={[
 				'grid min-h-36 place-items-center border-2 border-dashed p-5 text-center transition',
 				!selectedFile && 'cursor-pointer',
-				isDragging
-					? 'border-[var(--green)] bg-[var(--soft-green)]'
-					: 'border-[var(--soft-line)] bg-[var(--panel)]'
+				isDragging ? 'border-(--green) bg-(--soft-green)' : 'border-(--soft-line) bg-(--panel)'
 			]}
 			ondragenter={() => (isDragging = true)}
 			ondragleave={() => (isDragging = false)}
@@ -109,8 +107,8 @@
 				<div class="w-full text-left">
 					<div class="flex items-start justify-between gap-4">
 						<div class="min-w-0">
-							<p class="truncate text-base font-black text-[var(--ink)]">{selectedFile.name}</p>
-							<p class="mt-1 text-sm text-[var(--muted)]">{fileSize} · text/html</p>
+							<p class="truncate text-base font-black text-(--ink)">{selectedFile.name}</p>
+							<p class="mt-1 text-sm text-(--muted)">{fileSize} · text/html</p>
 						</div>
 						<IconButton
 							label="Remove selected file"
@@ -126,23 +124,23 @@
 				</div>
 			{:else}
 				<label for={fileInputId} class="block cursor-pointer">
-					<FileUp class="mx-auto text-[var(--hot)]" size={34} />
-					<p class="mt-3 text-base font-black text-[var(--ink)]">Drop your HTML file here</p>
-					<p class="mt-1 text-sm text-[var(--muted)]">Works with one .html file up to 2 MB.</p>
+					<FileUp class="mx-auto text-(--hot)" size={34} />
+					<p class="mt-3 text-base font-black text-(--ink)">Drop your HTML file here</p>
+					<p class="mt-1 text-sm text-(--muted)">Works with one .html file up to 2 MB.</p>
 				</label>
 			{/if}
 		</div>
 
 		<div class="grid gap-4 md:grid-cols-[1fr_1fr]">
 			<label class="block">
-				<span class="text-xs font-black tracking-[0.18em] text-[var(--muted)] uppercase">Link</span>
-				<div class="mt-2 flex border-2 border-[var(--ink)] bg-[var(--panel)]">
+				<span class="text-xs font-black tracking-[0.18em] text-(--muted) uppercase">Link</span>
+				<div class="mt-2 flex border-2 border-(--ink) bg-(--panel)">
 					<span
-						class="grid place-items-center border-r-2 border-[var(--ink)] px-3 text-sm text-[var(--muted)]"
+						class="grid place-items-center border-r-2 border-(--ink) px-3 text-sm text-(--muted)"
 						>/</span
 					>
 					<input
-						class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-sm font-bold text-[var(--ink)] focus:ring-0"
+						class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-sm font-bold text-(--ink) focus:ring-0"
 						placeholder="my-page"
 						bind:value={slug}
 						onblur={() => (slug = normalizeSlug(slug))}
@@ -151,10 +149,9 @@
 			</label>
 
 			<label class="block">
-				<span class="text-xs font-black tracking-[0.18em] text-[var(--muted)] uppercase">Title</span
-				>
+				<span class="text-xs font-black tracking-[0.18em] text-(--muted) uppercase">Title</span>
 				<input
-					class="mt-2 w-full border-2 border-[var(--ink)] bg-[var(--panel)] px-3 py-3 text-sm font-bold text-[var(--ink)] focus:ring-0"
+					class="mt-2 w-full border-2 border-(--ink) bg-(--panel) px-3 py-3 text-sm font-bold text-(--ink) focus:ring-0"
 					placeholder="Project homepage"
 					bind:value={title}
 				/>
@@ -174,17 +171,15 @@
 
 		{#if isPublishBlocked}
 			<div
-				class="flex items-center justify-between gap-3 border-2 border-[var(--ink)] bg-[var(--soft-green)] px-3 py-3"
+				class="flex items-center justify-between gap-3 border-2 border-(--ink) bg-(--soft-green) px-3 py-3"
 			>
-				<p class="text-sm font-bold text-[var(--ink)]">Free plan limit reached.</p>
+				<p class="text-sm font-bold text-(--ink)">Free plan limit reached.</p>
 				<UpgradeButton onclick={onupgrade} />
 			</div>
 		{/if}
 
 		{#if error}
-			<p
-				class="border border-[var(--danger-line)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger)]"
-			>
+			<p class="border border-(--danger-line) bg-(--danger-bg) px-3 py-2 text-sm text-(--danger)">
 				{error}
 			</p>
 		{/if}

@@ -17,11 +17,11 @@
 	let email = $derived(user.name ? user.email : undefined);
 </script>
 
-<header class="border-b-2 border-[var(--ink)] bg-[var(--panel)]">
+<header class="border-b-2 border-(--ink) bg-(--panel)">
 	<div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5 sm:px-6">
 		<!-- Logo -->
 		<span
-			class="inline-flex h-10 shrink-0 items-center border-2 border-[var(--ink)] bg-[var(--accent)] px-3 text-lg font-black text-[#171717]"
+			class="inline-flex h-10 shrink-0 items-center border-2 border-(--ink) bg-(--accent) px-3 text-lg font-black text-[#171717]"
 		>
 			QckPages
 		</span>
@@ -35,17 +35,17 @@
 			{@render children?.()}
 
 			<!-- Separator -->
-			<div class="hidden h-6 w-px bg-[var(--line)] sm:block"></div>
+			<div class="hidden h-6 w-px bg-(--line) sm:block"></div>
 
 			<!-- User info + actions -->
 			<div class="flex items-center gap-2">
 				<UserAvatar name={user.name} email={user.email} picture={user.picture} />
 				<div class="hidden sm:block">
-					<p class="max-w-48 truncate text-sm leading-tight font-bold text-[var(--ink)]">
+					<p class="max-w-48 truncate text-sm leading-tight font-bold text-(--ink)">
 						{displayName}
 					</p>
 					{#if email}
-						<p class="max-w-48 truncate text-xs leading-tight text-[var(--muted)]">
+						<p class="max-w-48 truncate text-xs leading-tight text-(--muted)">
 							{email}
 						</p>
 					{/if}

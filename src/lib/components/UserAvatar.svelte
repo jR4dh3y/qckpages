@@ -30,11 +30,11 @@
 	<img
 		src={picture}
 		alt={name ?? email ?? 'User avatar'}
-		class="{dimensions} border-2 border-[var(--ink)] object-cover"
+		class="{dimensions} border-2 border-(--ink) object-cover"
 	/>
 {:else}
 	<span
-		class="{dimensions} grid place-items-center border-2 border-[var(--ink)] bg-[var(--accent)] font-black text-[var(--ink)]"
+		class="{dimensions} grid place-items-center border-2 border-(--ink) bg-(--accent) font-black text-(--ink)"
 	>
 		{initials}
 	</span>
