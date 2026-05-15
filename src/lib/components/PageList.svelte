@@ -10,10 +10,11 @@
 		pages: PublishedPage[];
 		origin: string;
 		isLoading: boolean;
+		usageLabel: string;
 		ondelete: (slug: string) => Promise<void>;
 	}
 
-	let { pages, origin, isLoading, ondelete }: Props = $props();
+	let { pages, origin, isLoading, usageLabel, ondelete }: Props = $props();
 	let copiedSlug = $state<string | null>(null);
 
 	async function copyLink(slug: string): Promise<void> {
@@ -35,7 +36,7 @@
 			<h2 class="text-lg font-black text-[var(--ink)]">Published</h2>
 		</div>
 		<p class="text-sm font-black text-[var(--muted)]">
-			{pages.length} page{pages.length === 1 ? '' : 's'}
+			{usageLabel}
 		</p>
 	</div>
 
@@ -62,37 +63,54 @@
 							<span class="bg-[var(--soft-green)] px-2 py-1 text-xs font-black text-[var(--green)]"
 								>v{page.version}</span
 							>
+							{#if !page.published || page.lockedReason}
+								<span
+									class="bg-[var(--danger-bg)] px-2 py-1 text-xs font-black text-[var(--danger)]"
+								>
+									Locked
+								</span>
+							{/if}
 						</div>
-						<a
-							class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-[var(--link)] hover:underline"
-							href={resolve('/[slug]', { slug: page.slug })}
-							target="_blank"
-							rel="noreferrer"
-						>
-							<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
-						</a>
+						{#if page.published && !page.lockedReason}
+							<a
+								class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-[var(--link)] hover:underline"
+								href={resolve('/[slug]', { slug: page.slug })}
+								target="_blank"
+								rel="noreferrer"
+							>
+								<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
+							</a>
+						{:else}
+							<p class="mt-2 text-sm font-bold text-[var(--muted)]">{origin}/{page.slug}</p>
+						{/if}
 						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-[var(--subtle)] uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
 						</p>
 					</div>
 
 					<div class="flex gap-2">
-						<IconButton label="Copy public link" onclick={() => copyLink(page.slug)}>
+						<IconButton
+							label="Copy public link"
+							onclick={() => copyLink(page.slug)}
+							disabled={!page.published || Boolean(page.lockedReason)}
+						>
 							{#if copiedSlug === page.slug}
 								<CheckCheck size={17} />
 							{:else}
 								<Copy size={17} />
 							{/if}
 						</IconButton>
-						<IconButton
-							label="Open public page"
-							tone="green"
-							href={resolve('/[slug]', { slug: page.slug })}
-							target="_blank"
-							rel="noreferrer"
-						>
-							<ExternalLink size={17} />
-						</IconButton>
+						{#if page.published && !page.lockedReason}
+							<IconButton
+								label="Open public page"
+								tone="green"
+								href={resolve('/[slug]', { slug: page.slug })}
+								target="_blank"
+								rel="noreferrer"
+							>
+								<ExternalLink size={17} />
+							</IconButton>
+						{/if}
 						<IconButton label="Delete page" tone="red" onclick={() => ondelete(page.slug)}>
 							<Trash2 size={17} />
 						</IconButton>

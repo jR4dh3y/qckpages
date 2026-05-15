@@ -56,7 +56,7 @@
 					onclick={() => void onsignin()}
 				>
 					<LogIn size={18} />
-					{isLoading ? 'Checking session' : 'Continue with Shoo'}
+					{isLoading ? 'Checking session' : 'Continue with Google'}
 				</button>
 
 				{#if error}

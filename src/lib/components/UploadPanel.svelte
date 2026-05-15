@@ -1,15 +1,20 @@
 <script lang="ts">
 	import { FileUp, Send, X } from 'lucide-svelte';
 	import IconButton from './IconButton.svelte';
+	import UpgradeButton from './UpgradeButton.svelte';
 	import { normalizeSlug, titleFromFilename } from '$lib/utils/slug';
 
 	interface Props {
 		isUploading: boolean;
+		isQuotaBlocked: boolean;
+		publishedSlugs: string[];
 		error: string | null;
 		onpublish: (payload: { file: File; slug: string; title: string }) => Promise<boolean>;
+		onupgrade: () => void | Promise<void>;
 	}
 
-	let { isUploading, error, onpublish }: Props = $props();
+	let { isUploading, isQuotaBlocked, publishedSlugs, error, onpublish, onupgrade }: Props =
+		$props();
 	const fileInputId = $props.id();
 
 	let selectedFile = $state<File | null>(null);
@@ -20,6 +25,8 @@
 	let fileSize = $derived(
 		selectedFile ? `${Math.max(1, Math.round(selectedFile.size / 1024)).toLocaleString()} KB` : ''
 	);
+	let isExistingPublishedSlug = $derived(publishedSlugs.includes(normalizeSlug(slug)));
+	let isPublishBlocked = $derived(isQuotaBlocked && !isExistingPublishedSlug);
 
 	function pickFile(files: FileList | null): void {
 		const file = files?.item(0);
@@ -156,12 +163,21 @@
 		<button
 			type="button"
 			class="flex h-12 w-full items-center justify-center gap-2 bg-[var(--ink)] px-4 text-sm font-black text-[var(--paper)] transition hover:bg-[var(--green)] disabled:cursor-not-allowed disabled:bg-[var(--muted)]"
-			disabled={!selectedFile || isUploading}
+			disabled={!selectedFile || isUploading || isPublishBlocked}
 			onclick={publish}
 		>
 			<Send size={17} />
 			{isUploading ? 'Publishing' : 'Publish page'}
 		</button>
+
+		{#if isPublishBlocked}
+			<div
+				class="flex items-center justify-between gap-3 border-2 border-[var(--ink)] bg-[var(--soft-green)] px-3 py-3"
+			>
+				<p class="text-sm font-bold text-[var(--ink)]">Free plan limit reached.</p>
+				<UpgradeButton onclick={onupgrade} />
+			</div>
+		{/if}
 
 		{#if error}
 			<p

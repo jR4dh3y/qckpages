@@ -10,6 +10,7 @@ export interface PublishedPage {
 	size: number;
 	etag: string;
 	published: boolean;
+	lockedReason?: 'free_limit';
 	createdAt: string;
 	updatedAt: string;
 }
@@ -24,4 +25,15 @@ export interface PublicUser {
 export interface UploadResponse {
 	page: PublishedPage;
 	publicPath: string;
+}
+
+export interface Entitlement {
+	userId: string;
+	tier: 'free' | 'pro';
+	status: string;
+	razorpayCustomerId?: string;
+	razorpaySubscriptionId?: string;
+	razorpaySubscriptionShortUrl?: string;
+	currentPeriodEnd?: string;
+	updatedAt: string;
 }

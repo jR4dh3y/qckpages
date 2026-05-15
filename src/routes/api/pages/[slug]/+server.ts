@@ -1,31 +1,44 @@
 import { json } from '@sveltejs/kit';
+import { api } from '$convex/_generated/api';
 import type { RequestHandler } from './$types';
 import { deleteHtmlFromFbs } from '$lib/server/fbs';
-import { getPageBySlug, removePageForUser } from '$lib/server/page-store';
-import { verifyShooRequest } from '$lib/server/shoo';
+import { createServerConvexClient } from '$lib/server/convex';
 import { normalizeSlug } from '$lib/utils/slug';
 
 export const DELETE: RequestHandler = async (event) => {
-	let user;
 	try {
-		user = await verifyShooRequest(event);
+		const convex = createServerConvexClient({ token: event.locals.token });
+		const slug = normalizeSlug(event.params.slug);
+		const prepared = (await convex.query(api.pages.prepareDelete, { slug })) as {
+			pageId: string;
+			bucket: string;
+			key: string;
+		};
+
+		await deleteHtmlFromFbs({ bucket: prepared.bucket, key: prepared.key });
+		await convex.mutation(api.pages.confirmDelete, {
+			slug,
+			pageId: prepared.pageId,
+			bucket: prepared.bucket,
+			key: prepared.key
+		});
+
+		return new Response(null, { status: 204 });
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Unauthorized';
-		return json({ error: message }, { status: 401 });
+		const message = error instanceof Error ? error.message : 'Could not delete page';
+		return json({ error: message }, { status: statusFromMessage(message) });
 	}
-
-	const slug = normalizeSlug(event.params.slug);
-	const page = await getPageBySlug(slug);
-
-	if (!page) {
-		return json({ error: 'Page not found' }, { status: 404 });
-	}
-
-	if (page.ownerId !== user.userId) {
-		return json({ error: 'Forbidden' }, { status: 403 });
-	}
-
-	await deleteHtmlFromFbs({ bucket: page.bucket, key: page.key });
-	await removePageForUser(slug, user.userId);
-	return new Response(null, { status: 204 });
 };
+
+function statusFromMessage(message: string): number {
+	if (message.includes('Page not found')) {
+		return 404;
+	}
+	if (message.includes('Forbidden')) {
+		return 403;
+	}
+	if (message.includes('Sign in') || message.includes('Unauth')) {
+		return 401;
+	}
+	return 502;
+}

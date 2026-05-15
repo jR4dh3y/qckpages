@@ -1,17 +1,18 @@
 import { json } from '@sveltejs/kit';
+import { api } from '$convex/_generated/api';
 import type { RequestHandler } from './$types';
-import { getFbsBucket, uploadHtmlToFbs } from '$lib/server/fbs';
-import { getPageBySlug, listPagesForUser, upsertPage } from '$lib/server/page-store';
-import { verifyShooRequest } from '$lib/server/shoo';
-import type { PublishedPage } from '$lib/types/pages';
+import { deleteHtmlFromFbs, getFbsBucket, uploadHtmlToFbs } from '$lib/server/fbs';
+import { createServerConvexClient } from '$lib/server/convex';
+import type { PublishedPage, UploadResponse } from '$lib/types/pages';
 import { isValidSlug, normalizeSlug, titleFromFilename } from '$lib/utils/slug';
 
 const maxHtmlBytes = 2 * 1024 * 1024;
 
 export const GET: RequestHandler = async (event) => {
 	try {
-		const user = await verifyShooRequest(event);
-		return json({ pages: await listPagesForUser(user.userId) });
+		const convex = createServerConvexClient({ token: event.locals.token });
+		const pages = (await convex.query(api.pages.listForCurrentUser, {})) as PublishedPage[];
+		return json({ pages });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Could not list pages';
 		return json({ error: message }, { status: 401 });
@@ -19,14 +20,6 @@ export const GET: RequestHandler = async (event) => {
 };
 
 export const POST: RequestHandler = async (event) => {
-	let user;
-	try {
-		user = await verifyShooRequest(event);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : 'Unauthorized';
-		return json({ error: message }, { status: 401 });
-	}
-
 	const form = await event.request.formData();
 	const file = form.get('file');
 	const slug = normalizeSlug(String(form.get('slug') ?? ''));
@@ -52,43 +45,56 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	try {
-		const existing = await getPageBySlug(slug);
-		if (existing && existing.ownerId !== user.userId) {
-			return json({ error: 'That link is already taken' }, { status: 409 });
-		}
-
-		const now = new Date().toISOString();
-		const pageId = existing?.pageId ?? crypto.randomUUID();
-		const version = (existing?.version ?? 0) + 1;
 		const bucket = getFbsBucket();
-		const key = `page-${pageId}-v${version}.html`;
-		const body = await file.arrayBuffer();
-		const upload = await uploadHtmlToFbs({ bucket, key, body });
-
-		const page: PublishedPage = {
+		const convex = createServerConvexClient({ token: event.locals.token });
+		const prepared = (await convex.mutation(api.pages.preparePublish, {
 			slug,
-			pageId,
-			ownerId: user.userId,
-			title: title || existing?.title || titleFromFilename(file.name),
-			bucket,
-			key,
-			version,
+			title,
 			originalFilename: file.name,
 			size: file.size,
-			etag: upload.etag,
-			published: true,
-			createdAt: existing?.createdAt ?? now,
-			updatedAt: now
-		};
+			bucket
+		})) as { pageId: string; version: number; bucket: string; key: string; title: string };
 
-		await upsertPage(page);
+		const body = await file.arrayBuffer();
+		const upload = await uploadHtmlToFbs({ bucket: prepared.bucket, key: prepared.key, body });
+
+		let page: PublishedPage;
+		try {
+			page = (await convex.mutation(api.pages.commitPublish, {
+				slug,
+				title: title || prepared.title || titleFromFilename(file.name),
+				originalFilename: file.name,
+				size: file.size,
+				bucket: prepared.bucket,
+				pageId: prepared.pageId,
+				key: prepared.key,
+				version: prepared.version,
+				etag: upload.etag
+			})) as PublishedPage;
+		} catch (error) {
+			await deleteHtmlFromFbs({ bucket: prepared.bucket, key: prepared.key });
+			throw error;
+		}
 
 		return json({
 			page,
 			publicPath: `/${page.slug}`
-		});
+		} satisfies UploadResponse);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Could not publish page';
-		return json({ error: message }, { status: 502 });
+		return json({ error: message }, { status: statusFromMessage(message) });
 	}
 };
+
+function statusFromMessage(message: string): number {
+	if (message.includes('Sign in') || message.includes('Unauth')) {
+		return 401;
+	}
+	if (message.includes('already taken')) {
+		return 409;
+	}
+	if (message.includes('Free plan')) {
+		return 403;
+	}
+	return 502;
+}

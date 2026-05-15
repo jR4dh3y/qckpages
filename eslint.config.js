@@ -12,6 +12,9 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	{
+		ignores: ['.agents/**', 'src/convex/_generated/**', 'skills-lock.json', 'CLAUDE.md']
+	},
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
