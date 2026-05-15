@@ -128,6 +128,27 @@ export const markCurrentUserProInactive = mutation({
 	}
 });
 
+export const grantManualPro = mutation({
+	args: {
+		userId: v.string(),
+		secret: v.string()
+	},
+	handler: async (ctx, args) => {
+		const expectedSecret = process.env.MANUAL_BILLING_SECRET?.trim();
+		if (!expectedSecret || args.secret !== expectedSecret) {
+			throw new ConvexError('Not authorized to grant manual Pro access');
+		}
+
+		await upsertEntitlement(ctx, {
+			userId: args.userId,
+			tier: 'pro',
+			status: 'manual_grant'
+		});
+
+		return await getEntitlementByUserId(ctx, args.userId);
+	}
+});
+
 async function getEntitlementByUserId(ctx: QueryCtx | MutationCtx, userId: string) {
 	return await ctx.db
 		.query('entitlements')
