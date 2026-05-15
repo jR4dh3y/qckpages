@@ -30,14 +30,14 @@
 	}: Props = $props();
 
 	let classes = $derived([
-		'grid place-items-center border-2 border-[var(--ink)] bg-[var(--panel)] text-[var(--ink)] transition',
-		'hover:text-[#171717] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[var(--panel)]',
-		size === 'sm' ? 'size-8' : 'size-10',
+		'grid place-items-center border-2 border-(--ink) bg-(--panel) text-(--ink) transition',
+		'hover:text-[#171717] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-(--panel)',
+		size === 'sm' ? 'size-9' : 'size-10',
 		tone === 'green'
-			? 'hover:bg-[var(--green)]'
+			? 'hover:bg-(--green)'
 			: tone === 'red'
-				? 'hover:bg-[var(--hot)]'
-				: 'hover:bg-[var(--accent)]'
+				? 'hover:bg-(--hot)'
+				: 'hover:bg-(--accent)'
 	]);
 	let anchorAttributes = $derived({ href, target, rel });
 </script>
