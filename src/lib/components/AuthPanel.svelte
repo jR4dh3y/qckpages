@@ -2,6 +2,7 @@
 	import { LogIn } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import AppFooter from './AppFooter.svelte';
+	import AuthPrivacyPolicy from './AuthPrivacyPolicy.svelte';
 	import TextButton from './TextButton.svelte';
 	import TileField from './TileField.svelte';
 
@@ -71,6 +72,8 @@
 							{isLoading ? 'Checking session' : 'Continue with Google'}
 						</TextButton>
 					</div>
+
+					<AuthPrivacyPolicy />
 
 					{#if error}
 						<p
