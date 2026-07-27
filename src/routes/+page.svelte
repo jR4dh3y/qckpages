@@ -7,6 +7,7 @@
 	import AuthLoadingShell from '$lib/components/AuthLoadingShell.svelte';
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
+	import ApiKeyModal from '$lib/components/ApiKeyModal.svelte';
 	import PageList from '$lib/components/PageList.svelte';
 	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
@@ -28,6 +29,7 @@
 	let isUploading = $state(false);
 	let isBillingLoading = $state(false);
 	let showPlanModal = $state(false);
+	let showApiKeyModal = $state(false);
 	let authError = $state<string | null>(null);
 	let pageError = $state<string | null>(null);
 	let origin = $state('');
@@ -48,6 +50,10 @@
 
 	onMount(() => {
 		origin = window.location.origin;
+		const urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.get('cli_login') === 'true') {
+			showApiKeyModal = true;
+		}
 	});
 
 	async function signInWithGoogle(): Promise<void> {
@@ -251,6 +257,7 @@
 			{user}
 			onsignout={signOut}
 			onbilling={isPro && hasBillingPortal ? openPortal : undefined}
+			onapikeys={() => (showApiKeyModal = true)}
 		>
 			<UpgradeButton {isPro} isLoading={isBillingLoading} onclick={openPlanModal} />
 		</DashboardHeader>
@@ -287,6 +294,10 @@
 			onupgrade={upgrade}
 			onclose={() => (showPlanModal = false)}
 		/>
+	{/if}
+
+	{#if showApiKeyModal}
+		<ApiKeyModal onclose={() => (showApiKeyModal = false)} />
 	{/if}
 {:else if auth.isLoading || (auth.isAuthenticated && !user)}
 	<AuthLoadingShell />

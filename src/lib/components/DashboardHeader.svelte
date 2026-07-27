@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LogOut, Settings } from 'lucide-svelte';
+	import { Key, LogOut, Settings } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import UserAvatar from './UserAvatar.svelte';
 	import IconButton from './IconButton.svelte';
@@ -9,10 +9,11 @@
 		user: PublicUser;
 		onsignout: () => void;
 		onbilling?: () => void | Promise<void>;
+		onapikeys?: () => void;
 		children?: Snippet;
 	}
 
-	let { user, onsignout, onbilling, children }: Props = $props();
+	let { user, onsignout, onbilling, onapikeys, children }: Props = $props();
 	let displayName = $derived(user.name ?? user.email ?? 'Signed in');
 	let email = $derived(user.name ? user.email : undefined);
 </script>
@@ -52,6 +53,11 @@
 				</div>
 			</div>
 
+			{#if onapikeys}
+				<IconButton label="API Keys" tone="yellow" size="sm" onclick={onapikeys}>
+					<Key size={15} />
+				</IconButton>
+			{/if}
 			{#if onbilling}
 				<IconButton label="Billing" tone="yellow" size="sm" onclick={onbilling}>
 					<Settings size={15} />

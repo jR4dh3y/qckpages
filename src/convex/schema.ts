@@ -32,5 +32,17 @@ export default defineSchema({
 		razorpayPaymentId: v.optional(v.string()),
 		currentPeriodEnd: v.optional(v.string()),
 		updatedAt: v.string()
-	}).index('by_userId', ['userId'])
+	}).index('by_userId', ['userId']),
+	apiKeys: defineTable({
+		userId: v.string(),
+		keyHash: v.string(),
+		keyPrefix: v.string(),
+		name: v.string(),
+		userName: v.optional(v.string()),
+		userEmail: v.optional(v.string()),
+		createdAt: v.string(),
+		lastUsedAt: v.optional(v.string())
+	})
+		.index('by_keyHash', ['keyHash'])
+		.index('by_userId', ['userId'])
 });

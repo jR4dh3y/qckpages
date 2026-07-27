@@ -3,13 +3,18 @@ import { api } from '$convex/_generated/api';
 import type { RequestHandler } from './$types';
 import { deleteHtmlFromFbs } from '$lib/server/fbs';
 import { createServerConvexClient } from '$lib/server/convex';
+import { resolveAuthContext } from '$lib/server/auth';
 import { normalizeSlug } from '$lib/utils/slug';
 
 export const DELETE: RequestHandler = async (event) => {
 	try {
-		const convex = createServerConvexClient({ token: event.locals.token });
+		const authCtx = await resolveAuthContext(event);
+		const convex = createServerConvexClient({ token: authCtx.token });
 		const slug = normalizeSlug(event.params.slug);
-		const prepared = (await convex.query(api.pages.prepareDelete, { slug })) as {
+		const prepared = (await convex.query(api.pages.prepareDelete, {
+			slug,
+			userId: authCtx.userId
+		})) as {
 			pageId: string;
 			bucket: string;
 			key: string;
@@ -20,7 +25,8 @@ export const DELETE: RequestHandler = async (event) => {
 			slug,
 			pageId: prepared.pageId,
 			bucket: prepared.bucket,
-			key: prepared.key
+			key: prepared.key,
+			userId: authCtx.userId
 		});
 
 		return new Response(null, { status: 204 });

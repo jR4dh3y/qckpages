@@ -16,12 +16,14 @@ const pagePayload = {
 };
 
 export const listForCurrentUser = query({
-	args: {},
-	handler: async (ctx) => {
-		const user = await requireCurrentUser(ctx);
+	args: {
+		userId: v.optional(v.string())
+	},
+	handler: async (ctx, args) => {
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
 		const pages = await ctx.db
 			.query('pages')
-			.withIndex('by_owner_updatedAt', (q) => q.eq('ownerId', authUserId(user)))
+			.withIndex('by_owner_updatedAt', (q) => q.eq('ownerId', targetUserId))
 			.order('desc')
 			.collect();
 
@@ -44,13 +46,16 @@ export const getPublicPageBySlug = query({
 });
 
 export const preparePublish = mutation({
-	args: pagePayload,
+	args: {
+		...pagePayload,
+		userId: v.optional(v.string())
+	},
 	handler: async (ctx, args) => {
-		const user = await requireCurrentUser(ctx);
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
 		const slug = requireValidSlug(args.slug);
 		const existing = await getPageBySlug(ctx, slug);
 
-		await assertCanPublish(ctx, authUserId(user), existing);
+		await assertCanPublish(ctx, targetUserId, existing);
 
 		const version = (existing?.version ?? 0) + 1;
 		const pageId = existing?.pageId ?? crypto.randomUUID();
@@ -73,14 +78,15 @@ export const commitPublish = mutation({
 		pageId: v.string(),
 		key: v.string(),
 		version: v.number(),
-		etag: v.string()
+		etag: v.string(),
+		userId: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
-		const user = await requireCurrentUser(ctx);
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
 		const slug = requireValidSlug(args.slug);
 		const existing = await getPageBySlug(ctx, slug);
 
-		await assertCanPublish(ctx, authUserId(user), existing);
+		await assertCanPublish(ctx, targetUserId, existing);
 
 		if (existing && (existing.pageId !== args.pageId || existing.version + 1 !== args.version)) {
 			throw new ConvexError('Publish metadata is stale. Try again.');
@@ -90,7 +96,7 @@ export const commitPublish = mutation({
 		const page = {
 			slug,
 			pageId: args.pageId,
-			ownerId: authUserId(user),
+			ownerId: targetUserId,
 			title: cleanTitle(args.title) || existing?.title || titleFromFilename(args.originalFilename),
 			bucket: args.bucket,
 			key: args.key,
@@ -114,10 +120,10 @@ export const commitPublish = mutation({
 });
 
 export const prepareDelete = query({
-	args: { slug: v.string() },
+	args: { slug: v.string(), userId: v.optional(v.string()) },
 	handler: async (ctx, args) => {
-		const user = await requireCurrentUser(ctx);
-		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), authUserId(user));
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
+		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), targetUserId);
 
 		return {
 			pageId: page.pageId,
@@ -132,11 +138,12 @@ export const confirmDelete = mutation({
 		slug: v.string(),
 		pageId: v.string(),
 		bucket: v.string(),
-		key: v.string()
+		key: v.string(),
+		userId: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
-		const user = await requireCurrentUser(ctx);
-		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), authUserId(user));
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
+		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), targetUserId);
 
 		if (page.pageId !== args.pageId || page.bucket !== args.bucket || page.key !== args.key) {
 			throw new ConvexError('Delete metadata is stale. Try again.');

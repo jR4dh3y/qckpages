@@ -3,6 +3,7 @@ import { api } from '$convex/_generated/api';
 import type { RequestHandler } from './$types';
 import { deleteHtmlFromFbs, getFbsBucket, uploadHtmlToFbs } from '$lib/server/fbs';
 import { createServerConvexClient } from '$lib/server/convex';
+import { resolveAuthContext } from '$lib/server/auth';
 import type { PublishedPage, UploadResponse } from '$lib/types/pages';
 import { isValidSlug, normalizeSlug, titleFromFilename } from '$lib/utils/slug';
 
@@ -10,8 +11,11 @@ const maxHtmlBytes = 2 * 1024 * 1024;
 
 export const GET: RequestHandler = async (event) => {
 	try {
-		const convex = createServerConvexClient({ token: event.locals.token });
-		const pages = (await convex.query(api.pages.listForCurrentUser, {})) as PublishedPage[];
+		const authCtx = await resolveAuthContext(event);
+		const convex = createServerConvexClient({ token: authCtx.token });
+		const pages = (await convex.query(api.pages.listForCurrentUser, {
+			userId: authCtx.userId
+		})) as PublishedPage[];
 		return json({ pages });
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Could not list pages';
@@ -45,14 +49,16 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	try {
+		const authCtx = await resolveAuthContext(event);
 		const bucket = getFbsBucket();
-		const convex = createServerConvexClient({ token: event.locals.token });
+		const convex = createServerConvexClient({ token: authCtx.token });
 		const prepared = (await convex.mutation(api.pages.preparePublish, {
 			slug,
 			title,
 			originalFilename: file.name,
 			size: file.size,
-			bucket
+			bucket,
+			userId: authCtx.userId
 		})) as { pageId: string; version: number; bucket: string; key: string; title: string };
 
 		const body = await file.arrayBuffer();
@@ -69,7 +75,8 @@ export const POST: RequestHandler = async (event) => {
 				pageId: prepared.pageId,
 				key: prepared.key,
 				version: prepared.version,
-				etag: upload.etag
+				etag: upload.etag,
+				userId: authCtx.userId
 			})) as PublishedPage;
 		} catch (error) {
 			await deleteHtmlFromFbs({ bucket: prepared.bucket, key: prepared.key });
