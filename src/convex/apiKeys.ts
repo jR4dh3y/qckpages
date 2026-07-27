@@ -67,9 +67,29 @@ export const listForCurrentUser = query({
 			id: k._id,
 			name: k.name,
 			keyPrefix: k.keyPrefix,
+			disabled: Boolean(k.disabled),
 			createdAt: k.createdAt,
 			lastUsedAt: k.lastUsedAt
 		}));
+	}
+});
+
+export const toggleApiKeyStatus = mutation({
+	args: {
+		keyId: v.id('apiKeys')
+	},
+	handler: async (ctx, args) => {
+		const user = await requireCurrentUser(ctx);
+		const userId = authUserId(user);
+
+		const key = await ctx.db.get(args.keyId);
+		if (!key || key.userId !== userId) {
+			throw new ConvexError('API key not found');
+		}
+
+		const newDisabledState = !key.disabled;
+		await ctx.db.patch(args.keyId, { disabled: newDisabledState });
+		return { success: true, disabled: newDisabledState };
 	}
 });
 
@@ -107,7 +127,7 @@ export const validateApiKey = mutation({
 			.withIndex('by_keyHash', (q) => q.eq('keyHash', keyHash))
 			.unique();
 
-		if (!record) {
+		if (!record || record.disabled) {
 			return { valid: false, userId: null };
 		}
 

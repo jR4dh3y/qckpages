@@ -40,6 +40,7 @@ export default defineSchema({
 		name: v.string(),
 		userName: v.optional(v.string()),
 		userEmail: v.optional(v.string()),
+		disabled: v.optional(v.boolean()),
 		createdAt: v.string(),
 		lastUsedAt: v.optional(v.string())
 	})

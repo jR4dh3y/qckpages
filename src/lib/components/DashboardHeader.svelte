@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Key, LogOut, Settings } from 'lucide-svelte';
+	import { resolveRoute } from '$app/paths';
+	import { LogOut, Settings, Terminal } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import UserAvatar from './UserAvatar.svelte';
 	import IconButton from './IconButton.svelte';
@@ -9,23 +10,32 @@
 		user: PublicUser;
 		onsignout: () => void;
 		onbilling?: () => void | Promise<void>;
-		onapikeys?: () => void;
 		children?: Snippet;
 	}
 
-	let { user, onsignout, onbilling, onapikeys, children }: Props = $props();
+	let { user, onsignout, onbilling, children }: Props = $props();
 	let displayName = $derived(user.name ?? user.email ?? 'Signed in');
 	let email = $derived(user.name ? user.email : undefined);
 </script>
 
 <header class="border-b-2 border-(--ink) bg-(--panel)">
-	<div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5 sm:px-6">
+	<div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6">
 		<!-- Logo -->
-		<span
-			class="inline-flex h-10 shrink-0 items-center border-2 border-(--ink) bg-(--accent) px-3 text-lg font-black text-[#171717]"
+		<a
+			href={resolveRoute('/')}
+			class="inline-flex h-10 shrink-0 items-center border-2 border-(--ink) bg-(--accent) px-3 text-lg font-black text-[#171717] hover:brightness-105"
 		>
 			QckPages
-		</span>
+		</a>
+
+		<!-- CLI section link right after QckPages branding -->
+		<a
+			href={resolveRoute('/cli')}
+			class="inline-flex h-10 items-center gap-1.5 border-2 border-(--ink) bg-white px-3 text-xs font-black text-(--ink) transition hover:bg-amber-100 sm:text-sm"
+		>
+			<Terminal size={16} />
+			<span>CLI</span>
+		</a>
 
 		<!-- Spacer -->
 		<div class="min-w-0 flex-1"></div>
@@ -53,11 +63,6 @@
 				</div>
 			</div>
 
-			{#if onapikeys}
-				<IconButton label="API Keys" tone="yellow" size="sm" onclick={onapikeys}>
-					<Key size={15} />
-				</IconButton>
-			{/if}
 			{#if onbilling}
 				<IconButton label="Billing" tone="yellow" size="sm" onclick={onbilling}>
 					<Settings size={15} />

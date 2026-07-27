@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolveRoute } from '$app/paths';
 	import { api } from '$convex/_generated/api';
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
@@ -7,7 +9,6 @@
 	import AuthLoadingShell from '$lib/components/AuthLoadingShell.svelte';
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
-	import ApiKeyModal from '$lib/components/ApiKeyModal.svelte';
 	import PageList from '$lib/components/PageList.svelte';
 	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
@@ -29,7 +30,6 @@
 	let isUploading = $state(false);
 	let isBillingLoading = $state(false);
 	let showPlanModal = $state(false);
-	let showApiKeyModal = $state(false);
 	let authError = $state<string | null>(null);
 	let pageError = $state<string | null>(null);
 	let origin = $state('');
@@ -52,7 +52,7 @@
 		origin = window.location.origin;
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('cli_login') === 'true') {
-			showApiKeyModal = true;
+			void goto(resolveRoute('/cli'));
 		}
 	});
 
@@ -152,38 +152,19 @@
 		return typeof body?.error === 'string' ? body.error : `${fallback} (${response.status})`;
 	}
 
-	function toPublicUser(value: unknown): PublicUser | null {
-		if (!value || typeof value !== 'object') {
-			return null;
-		}
-
-		const userValue = value as {
-			id?: unknown;
-			_id?: unknown;
-			userId?: unknown;
-			email?: unknown;
-			name?: unknown;
-			image?: unknown;
-		};
-
-		const userId =
-			typeof userValue.id === 'string'
-				? userValue.id
-				: typeof userValue.userId === 'string'
-					? userValue.userId
-					: typeof userValue._id === 'string'
-						? userValue._id
-						: null;
-
-		if (!userId) {
-			return null;
-		}
-
+	function toPublicUser(data: unknown): PublicUser | null {
+		if (!data || typeof data !== 'object') return null;
+		const val = data as Record<string, unknown>;
 		return {
-			userId,
-			email: typeof userValue.email === 'string' ? userValue.email : undefined,
-			name: typeof userValue.name === 'string' ? userValue.name : undefined,
-			picture: typeof userValue.image === 'string' ? userValue.image : undefined
+			userId: String(val.userId ?? val._id ?? val.id ?? ''),
+			email: typeof val.email === 'string' ? val.email : undefined,
+			name: typeof val.name === 'string' ? val.name : undefined,
+			picture:
+				typeof val.image === 'string'
+					? val.image
+					: typeof val.picture === 'string'
+						? val.picture
+						: undefined
 		};
 	}
 
@@ -257,7 +238,6 @@
 			{user}
 			onsignout={signOut}
 			onbilling={isPro && hasBillingPortal ? openPortal : undefined}
-			onapikeys={() => (showApiKeyModal = true)}
 		>
 			<UpgradeButton {isPro} isLoading={isBillingLoading} onclick={openPlanModal} />
 		</DashboardHeader>
@@ -294,10 +274,6 @@
 			onupgrade={upgrade}
 			onclose={() => (showPlanModal = false)}
 		/>
-	{/if}
-
-	{#if showApiKeyModal}
-		<ApiKeyModal onclose={() => (showApiKeyModal = false)} />
 	{/if}
 {:else if auth.isLoading || (auth.isAuthenticated && !user)}
 	<AuthLoadingShell />
