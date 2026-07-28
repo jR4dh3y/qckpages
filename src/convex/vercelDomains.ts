@@ -1,7 +1,7 @@
 export type DomainStatus = 'pending_dns' | 'active' | 'error';
 
 export interface DnsInstruction {
-	type: 'CNAME' | 'TXT';
+	type: 'CNAME' | 'TXT' | 'NS';
 	name: string;
 	value: string;
 	purpose: 'traffic' | 'ownership';
@@ -176,7 +176,23 @@ export function provisioningState(
 	configuration: VercelDomainConfiguration
 ): ProvisioningState {
 	const dnsInstructions: DnsInstruction[] = [];
-	if (configuration.recommendedCname) {
+	if (hostname.startsWith('*.')) {
+		const baseHostname = hostname.slice(2);
+		dnsInstructions.push(
+			{
+				type: 'NS',
+				name: baseHostname,
+				value: 'ns1.vercel-dns.com',
+				purpose: 'traffic'
+			},
+			{
+				type: 'NS',
+				name: baseHostname,
+				value: 'ns2.vercel-dns.com',
+				purpose: 'traffic'
+			}
+		);
+	} else if (configuration.recommendedCname) {
 		dnsInstructions.push({
 			type: 'CNAME',
 			name: hostname,

@@ -9,25 +9,8 @@ export async function requirePro(ctx: MutationCtx, ownerId: string): Promise<voi
 		.withIndex('by_userId', (q) => q.eq('userId', ownerId))
 		.unique();
 	if (entitlement?.tier !== 'pro' || entitlement.status !== 'active') {
-		throw new ConvexError('Custom redirect domains require permanent Pro access');
+		throw new ConvexError('Custom domains require permanent Pro access');
 	}
-}
-
-export async function requireEligiblePage(
-	ctx: QueryCtx | MutationCtx,
-	ownerId: string,
-	pageId: string
-): Promise<Doc<'pages'>> {
-	const page = await ctx.db
-		.query('pages')
-		.withIndex('by_pageId', (q) => q.eq('pageId', pageId))
-		.unique();
-	if (!page) throw new ConvexError('Page not found');
-	if (page.ownerId !== ownerId) throw new ConvexError('Forbidden');
-	if (!page.published || page.lockedReason || page.deleting) {
-		throw new ConvexError('Choose a published, unlocked page');
-	}
-	return page;
 }
 
 export async function requireOwnedDomain(
@@ -73,7 +56,7 @@ export function toCustomDomain(
 	domain: Pick<
 		Doc<'customDomains'>,
 		| 'hostname'
-		| 'pageId'
+		| 'routingMode'
 		| 'status'
 		| 'dnsInstructions'
 		| 'error'
@@ -84,7 +67,7 @@ export function toCustomDomain(
 ) {
 	return {
 		hostname: domain.hostname,
-		pageId: domain.pageId,
+		routingMode: domain.routingMode,
 		status: domain.status,
 		dnsInstructions: domain.dnsInstructions,
 		error: domain.error,

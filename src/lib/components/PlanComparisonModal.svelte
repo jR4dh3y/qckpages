@@ -71,7 +71,7 @@
 					>
 						<Check size={14} strokeWidth={3} />
 					</span>
-					<span class="text-sm font-bold text-(--ink)">1 custom redirect domain</span>
+					<span class="text-sm font-bold text-(--ink)">Wildcard page subdomains</span>
 				</li>
 				<li class="flex items-center gap-3">
 					<span

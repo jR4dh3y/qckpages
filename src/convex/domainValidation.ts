@@ -24,12 +24,12 @@ export function normalizeCustomHostname(
 		/[\\@?#%]/.test(rawHostname) ||
 		/\s/.test(rawHostname)
 	) {
-		throw new Error('Enter an exact subdomain such as go.example.com');
+		throw new Error('Enter a domain such as example.com or pages.example.com');
 	}
 
 	const hostname = toAsciiHostname(rawHostname);
 	if (!hostname || !hostnamePattern.test(hostname)) {
-		throw new Error('Enter an exact valid subdomain such as go.example.com');
+		throw new Error('Enter a valid domain such as example.com');
 	}
 
 	const reservedHosts = new Set([
@@ -37,7 +37,12 @@ export function normalizeCustomHostname(
 		...(options.reservedHosts ?? []).map(normalizeReservedHost).filter(Boolean)
 	]);
 	if (
-		reservedHosts.has(hostname) ||
+		[...reservedHosts].some(
+			(reservedHost) =>
+				reservedHost === hostname ||
+				reservedHost.endsWith(`.${hostname}`) ||
+				hostname.endsWith(`.${reservedHost}`)
+		) ||
 		hostname.endsWith('.vercel.app') ||
 		hostname.endsWith('.convex.site')
 	) {
@@ -45,16 +50,15 @@ export function normalizeCustomHostname(
 	}
 
 	const parsed = parse(hostname, { allowPrivateDomains: true, validateHostname: true });
-	if (
-		!parsed.domain ||
-		!parsed.publicSuffix ||
-		(!parsed.isIcann && !parsed.isPrivate) ||
-		!parsed.subdomain
-	) {
-		throw new Error('A registrable-domain subdomain is required; apex domains are not supported');
+	if (!parsed.domain || !parsed.publicSuffix || !parsed.isIcann) {
+		throw new Error('Enter a registrable domain that you control');
 	}
 
 	return hostname;
+}
+
+export function wildcardHostname(hostname: string): string {
+	return `*.${hostname}`;
 }
 
 function toAsciiHostname(value: string): string {

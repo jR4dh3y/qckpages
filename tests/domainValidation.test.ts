@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { normalizeCustomHostname } from '../src/convex/domainValidation';
+import { normalizeCustomHostname, wildcardHostname } from '../src/convex/domainValidation';
 
 describe('normalizeCustomHostname', () => {
 	test('normalizes an exact ASCII subdomain', () => {
@@ -10,14 +10,18 @@ describe('normalizeCustomHostname', () => {
 		expect(normalizeCustomHostname('go.example.co.uk')).toBe('go.example.co.uk');
 	});
 
+	test('accepts an apex domain as the wildcard base', () => {
+		expect(normalizeCustomHostname('Example.COM')).toBe('example.com');
+		expect(wildcardHostname('example.com')).toBe('*.example.com');
+	});
+
 	test.each([
-		'example.com',
 		'https://go.example.com',
 		'go.example.com/path',
 		'go.example.com:443',
 		'*.example.com',
 		'go.example.com@other.example.net'
-	])('rejects non-subdomain input: %s', (hostname) => {
+	])('rejects invalid domain input: %s', (hostname) => {
 		expect(() => normalizeCustomHostname(hostname)).toThrow();
 	});
 
@@ -26,12 +30,12 @@ describe('normalizeCustomHostname', () => {
 	});
 
 	test('rejects an invalid IDN', () => {
-		expect(() => normalizeCustomHostname('xn--.example.com')).toThrow('valid subdomain');
+		expect(() => normalizeCustomHostname('xn--.example.com')).toThrow('valid domain');
 	});
 
-	test('uses private suffix rules to distinguish private apex domains', () => {
-		expect(() => normalizeCustomHostname('portfolio.github.io')).toThrow('apex domains');
-		expect(normalizeCustomHostname('www.portfolio.github.io')).toBe('www.portfolio.github.io');
+	test('rejects private hosting suffixes that the user cannot control', () => {
+		expect(() => normalizeCustomHostname('portfolio.github.io')).toThrow('registrable domain');
+		expect(() => normalizeCustomHostname('www.portfolio.github.io')).toThrow('registrable domain');
 	});
 
 	test.each(['preview.vercel.app', 'site.convex.site'])(
@@ -44,6 +48,14 @@ describe('normalizeCustomHostname', () => {
 	test('rejects the configured canonical QckPages host', () => {
 		expect(() =>
 			normalizeCustomHostname('app.example.com', {
+				reservedHosts: ['https://app.example.com']
+			})
+		).toThrow('reserved');
+	});
+
+	test('rejects a wildcard base that would cover the canonical QckPages host', () => {
+		expect(() =>
+			normalizeCustomHostname('example.com', {
 				reservedHosts: ['https://app.example.com']
 			})
 		).toThrow('reserved');

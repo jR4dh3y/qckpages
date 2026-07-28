@@ -30,8 +30,7 @@ export const POST: RequestHandler = async (event) => {
 		const auth = await resolveAuthContext(event);
 		const convex = createServerConvexClient({ token: auth.token });
 		const domain = (await convex.action(api.customDomains.provision, {
-			hostname,
-			pageId: body.pageId
+			hostname
 		})) as CustomDomain;
 		return json({ domain }, { status: 201 });
 	} catch (error) {
@@ -39,12 +38,12 @@ export const POST: RequestHandler = async (event) => {
 	}
 };
 
-async function readDomainBody(request: Request): Promise<{ hostname: string; pageId: string }> {
+async function readDomainBody(request: Request): Promise<{ hostname: string }> {
 	const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-	if (typeof body?.hostname !== 'string' || typeof body.pageId !== 'string') {
-		throw new Error('hostname and pageId are required');
+	if (typeof body?.hostname !== 'string') {
+		throw new Error('hostname is required');
 	}
-	return { hostname: body.hostname, pageId: body.pageId };
+	return { hostname: body.hostname };
 }
 
 function errorResponse(error: unknown, fallback: string): Response {

@@ -10,7 +10,7 @@
 	import UpgradeButton from '$lib/components/UpgradeButton.svelte';
 	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
 	import { authClient, openCustomerPortal, startProCheckout } from '$lib/auth-client';
-	import type { Entitlement, PublicUser } from '$lib/types/pages';
+	import { toEntitlement, toPublicUser } from '$lib/utils/account';
 
 	const auth = useAuth();
 	const currentUserQuery = useQuery(api.auth.getCurrentUser, () =>
@@ -59,65 +59,6 @@
 			callbackURL: typeof window !== 'undefined' ? window.location.href : '/'
 		});
 	}
-
-	function toPublicUser(data: unknown): PublicUser | null {
-		if (!data || typeof data !== 'object') return null;
-		const val = data as Record<string, unknown>;
-		return {
-			userId: String(val.userId ?? val._id ?? val.id ?? ''),
-			email: typeof val.email === 'string' ? val.email : undefined,
-			name: typeof val.name === 'string' ? val.name : undefined,
-			picture:
-				typeof val.image === 'string'
-					? val.image
-					: typeof val.picture === 'string'
-						? val.picture
-						: undefined
-		};
-	}
-
-	function toEntitlement(value: unknown, userId = ''): Entitlement {
-		if (!value || typeof value !== 'object') {
-			return {
-				userId,
-				tier: 'free',
-				status: 'inactive',
-				updatedAt: new Date().toISOString()
-			};
-		}
-
-		const val = value as {
-			userId?: unknown;
-			tier?: unknown;
-			status?: unknown;
-			razorpayCustomerId?: unknown;
-			razorpaySubscriptionId?: unknown;
-			razorpaySubscriptionShortUrl?: unknown;
-			razorpayOrderId?: unknown;
-			razorpayPaymentId?: unknown;
-			currentPeriodEnd?: unknown;
-			updatedAt?: unknown;
-		};
-
-		return {
-			userId: typeof val.userId === 'string' ? val.userId : userId,
-			tier: val.tier === 'pro' ? 'pro' : 'free',
-			status: typeof val.status === 'string' ? val.status : 'inactive',
-			razorpayCustomerId:
-				typeof val.razorpayCustomerId === 'string' ? val.razorpayCustomerId : undefined,
-			razorpaySubscriptionId:
-				typeof val.razorpaySubscriptionId === 'string' ? val.razorpaySubscriptionId : undefined,
-			razorpaySubscriptionShortUrl:
-				typeof val.razorpaySubscriptionShortUrl === 'string'
-					? val.razorpaySubscriptionShortUrl
-					: undefined,
-			razorpayOrderId: typeof val.razorpayOrderId === 'string' ? val.razorpayOrderId : undefined,
-			razorpayPaymentId:
-				typeof val.razorpayPaymentId === 'string' ? val.razorpayPaymentId : undefined,
-			currentPeriodEnd: typeof val.currentPeriodEnd === 'string' ? val.currentPeriodEnd : undefined,
-			updatedAt: typeof val.updatedAt === 'string' ? val.updatedAt : new Date().toISOString()
-		};
-	}
 </script>
 
 <svelte:head>
@@ -132,6 +73,7 @@
 	<div class="flex h-dvh flex-col overflow-hidden bg-(--paper) text-(--ink)">
 		<DashboardHeader
 			{user}
+			current="cli"
 			onsignout={signOut}
 			onbilling={isPro && hasBillingPortal ? openPortal : undefined}
 		>

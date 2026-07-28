@@ -5,6 +5,7 @@
 	import IconButton from './IconButton.svelte';
 	import type { CustomDomain } from '$lib/types/domains';
 	import type { PublishedPage } from '$lib/types/pages';
+	import { publicPageUrl } from '$lib/utils/public-url';
 
 	interface Props {
 		pages: PublishedPage[];
@@ -19,7 +20,7 @@
 	let copiedSlug = $state<string | null>(null);
 
 	async function copyLink(page: PublishedPage): Promise<void> {
-		await navigator.clipboard.writeText(publicUrl(page));
+		await navigator.clipboard.writeText(publicPageUrl(origin, page.slug, customDomain));
 		copiedSlug = page.slug;
 		window.setTimeout(() => {
 			if (copiedSlug === page.slug) {
@@ -28,14 +29,8 @@
 		}, 1400);
 	}
 
-	function publicUrl(page: PublishedPage): string {
-		return customDomain?.status === 'active' && customDomain.pageId === page.pageId
-			? `https://${customDomain.hostname}`
-			: `${origin}/${page.slug}`;
-	}
-
 	function publicLinkAttributes(page: PublishedPage): { href: string } {
-		return { href: publicUrl(page) };
+		return { href: publicPageUrl(origin, page.slug, customDomain) };
 	}
 </script>
 
@@ -85,10 +80,14 @@
 								target="_blank"
 								rel="noreferrer"
 							>
-								<span class="min-w-0 flex-1 truncate">{publicUrl(page)}</span>
+								<span class="min-w-0 flex-1 truncate"
+									>{publicPageUrl(origin, page.slug, customDomain)}</span
+								>
 							</a>
 						{:else}
-							<p class="mt-2 text-sm font-bold text-(--muted)">{publicUrl(page)}</p>
+							<p class="mt-2 text-sm font-bold text-(--muted)">
+								{publicPageUrl(origin, page.slug, customDomain)}
+							</p>
 						{/if}
 						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-(--subtle) uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
@@ -111,7 +110,7 @@
 							<IconButton
 								label="Open public page"
 								tone="green"
-								href={publicUrl(page)}
+								href={publicPageUrl(origin, page.slug, customDomain)}
 								target="_blank"
 								rel="noreferrer"
 							>
