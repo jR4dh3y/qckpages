@@ -1,6 +1,7 @@
 import { loadConfig } from './config';
 import { readFileSync, existsSync } from 'node:fs';
 import { basename } from 'node:path';
+import { DEFAULT_SERVER_URL } from './constants';
 
 export interface UserStatus {
 	userId: string;
@@ -38,8 +39,9 @@ export async function fetchUserStatus(apiKeyOverride?: string): Promise<UserStat
 	if (!apiKey) {
 		throw new Error('Not logged in. Please run `qckpage login` first.');
 	}
+	const serverUrl = config.serverUrl ?? DEFAULT_SERVER_URL;
 
-	const response = await fetch(`${config.serverUrl}/api/user/status`, {
+	const response = await fetch(`${serverUrl}/api/user/status`, {
 		headers: {
 			Authorization: `Bearer ${apiKey}`
 		}
@@ -59,8 +61,9 @@ export async function fetchPublishedPages(): Promise<PublishedPage[]> {
 	if (!apiKey) {
 		throw new Error('Not logged in. Please run `qckpage login` first.');
 	}
+	const serverUrl = config.serverUrl ?? DEFAULT_SERVER_URL;
 
-	const response = await fetch(`${config.serverUrl}/api/pages`, {
+	const response = await fetch(`${serverUrl}/api/pages`, {
 		headers: {
 			Authorization: `Bearer ${apiKey}`
 		}
@@ -85,6 +88,7 @@ export async function publishPageFile(
 	if (!apiKey) {
 		throw new Error('Not logged in. Please run `qckpage login` first.');
 	}
+	const serverUrl = config.serverUrl ?? DEFAULT_SERVER_URL;
 
 	if (!existsSync(filePath)) {
 		throw new Error(`File not found: ${filePath}`);
@@ -101,10 +105,11 @@ export async function publishPageFile(
 		formData.append('title', title);
 	}
 
-	const response = await fetch(`${config.serverUrl}/api/pages`, {
+	const response = await fetch(`${serverUrl}/api/pages`, {
 		method: 'POST',
 		headers: {
-			Authorization: `Bearer ${apiKey}`
+			Authorization: `Bearer ${apiKey}`,
+			Origin: new URL(serverUrl).origin
 		},
 		body: formData
 	});
@@ -115,7 +120,7 @@ export async function publishPageFile(
 	}
 
 	const result = (await response.json()) as { page: PublishedPage; publicPath: string };
-	const publicUrl = `${config.serverUrl}${result.publicPath}`;
+	const publicUrl = `${serverUrl}${result.publicPath}`;
 
 	return {
 		page: result.page,

@@ -94,7 +94,12 @@ export const POST: RequestHandler = async (event) => {
 };
 
 function statusFromMessage(message: string): number {
-	if (message.includes('Sign in') || message.includes('Unauth')) {
+	if (
+		message.includes('Sign in') ||
+		message.includes('Unauth') ||
+		message.includes('Authentication') ||
+		message.includes('Invalid or revoked API key')
+	) {
 		return 401;
 	}
 	if (message.includes('already taken')) {

@@ -9,7 +9,7 @@ import { formatBytes, openBrowser, prompt, slugify } from './utils';
 import { DEFAULT_SERVER_URL } from './constants';
 import { CLI_INSTALL_COMMANDS } from '../lib/cli-install';
 
-const CLI_VERSION = '0.1.1';
+const CLI_VERSION = '0.1.2';
 
 const program = new Command();
 
