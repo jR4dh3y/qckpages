@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Download, Plus, Trash2, Copy, Check, ShieldAlert } from 'lucide-svelte';
+	import { Plus, Trash2, Copy, Check, ShieldAlert } from 'lucide-svelte';
 	import { useMutation, useQuery } from '@mmailaender/convex-svelte';
 	import { api } from '$convex/_generated/api';
 	import IconButton from './IconButton.svelte';
@@ -200,7 +200,7 @@
 		<!-- Newly Created Secret Key Banner (positioned below input) -->
 		{#if newlyCreatedRawKey}
 			<div class="shrink-0 border-2 border-(--ink) bg-amber-50 p-3 text-xs">
-				<p class="font-black uppercase tracking-wider text-amber-900">Save your new API Key</p>
+				<p class="font-black tracking-wider text-amber-900 uppercase">Save your new API Key</p>
 				<p class="my-1 text-amber-800">Copy this key now. You won't see it again!</p>
 				<div class="mt-2 flex items-center gap-2">
 					<input
@@ -242,7 +242,7 @@
 			</div>
 		{:else}
 			<div
-				class="hidden-scrollbar min-h-0 flex-1 divide-y-2 divide-(--ink) border-2 border-(--ink) bg-white overflow-y-auto"
+				class="hidden-scrollbar min-h-0 flex-1 divide-y-2 divide-(--ink) overflow-y-auto border-2 border-(--ink) bg-white"
 			>
 				{#each keys as key (key.id)}
 					<div class="flex items-center justify-between gap-4 p-3.5 text-xs">
@@ -273,7 +273,7 @@
 						<div class="flex shrink-0 items-center gap-2">
 							<button
 								type="button"
-								class="inline-flex h-9 items-center justify-center border-2 border-(--ink) px-3 text-xs font-black transition cursor-pointer {key.disabled
+								class="inline-flex h-9 cursor-pointer items-center justify-center border-2 border-(--ink) px-3 text-xs font-black transition {key.disabled
 									? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
 									: 'bg-(--soft-green) text-(--green) hover:bg-emerald-200'}"
 								onclick={() => handleToggleKey(key.id)}

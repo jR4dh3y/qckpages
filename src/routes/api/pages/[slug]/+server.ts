@@ -11,7 +11,7 @@ export const DELETE: RequestHandler = async (event) => {
 		const authCtx = await resolveAuthContext(event);
 		const convex = createServerConvexClient({ token: authCtx.token });
 		const slug = normalizeSlug(event.params.slug);
-		const prepared = (await convex.query(api.pages.prepareDelete, {
+		const prepared = (await convex.mutation(api.pages.prepareDelete, {
 			slug,
 			userId: authCtx.userId
 		})) as {
@@ -20,7 +20,18 @@ export const DELETE: RequestHandler = async (event) => {
 			key: string;
 		};
 
-		await deleteHtmlFromFbs({ bucket: prepared.bucket, key: prepared.key });
+		try {
+			await deleteHtmlFromFbs({ bucket: prepared.bucket, key: prepared.key });
+		} catch (error) {
+			await convex
+				.mutation(api.pages.cancelDelete, {
+					slug,
+					pageId: prepared.pageId,
+					userId: authCtx.userId
+				})
+				.catch(() => undefined);
+			throw error;
+		}
 		await convex.mutation(api.pages.confirmDelete, {
 			slug,
 			pageId: prepared.pageId,
@@ -42,6 +53,9 @@ function statusFromMessage(message: string): number {
 	}
 	if (message.includes('Forbidden')) {
 		return 403;
+	}
+	if (message.includes('linked to')) {
+		return 409;
 	}
 	if (message.includes('Sign in') || message.includes('Unauth')) {
 		return 401;

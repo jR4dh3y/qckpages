@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { CheckCheck, Copy, ExternalLink, Trash2 } from 'lucide-svelte';
-	import { resolve } from '$app/paths';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import IconButton from './IconButton.svelte';
+	import type { CustomDomain } from '$lib/types/domains';
 	import type { PublishedPage } from '$lib/types/pages';
 
 	interface Props {
@@ -11,20 +11,31 @@
 		origin: string;
 		isLoading: boolean;
 		usageLabel: string;
+		customDomain: CustomDomain | null;
 		ondelete: (slug: string) => Promise<void>;
 	}
 
-	let { pages, origin, isLoading, usageLabel, ondelete }: Props = $props();
+	let { pages, origin, isLoading, usageLabel, customDomain, ondelete }: Props = $props();
 	let copiedSlug = $state<string | null>(null);
 
-	async function copyLink(slug: string): Promise<void> {
-		await navigator.clipboard.writeText(`${origin}/${slug}`);
-		copiedSlug = slug;
+	async function copyLink(page: PublishedPage): Promise<void> {
+		await navigator.clipboard.writeText(publicUrl(page));
+		copiedSlug = page.slug;
 		window.setTimeout(() => {
-			if (copiedSlug === slug) {
+			if (copiedSlug === page.slug) {
 				copiedSlug = null;
 			}
 		}, 1400);
+	}
+
+	function publicUrl(page: PublishedPage): string {
+		return customDomain?.status === 'active' && customDomain.pageId === page.pageId
+			? `https://${customDomain.hostname}`
+			: `${origin}/${page.slug}`;
+	}
+
+	function publicLinkAttributes(page: PublishedPage): { href: string } {
+		return { href: publicUrl(page) };
 	}
 </script>
 
@@ -70,14 +81,14 @@
 						{#if page.published && !page.lockedReason}
 							<a
 								class="mt-2 flex min-w-0 items-center gap-3 text-sm font-bold text-(--link) hover:underline"
-								href={resolve('/[slug]', { slug: page.slug })}
+								{...publicLinkAttributes(page)}
 								target="_blank"
 								rel="noreferrer"
 							>
-								<span class="min-w-0 flex-1 truncate">{origin}/{page.slug}</span>
+								<span class="min-w-0 flex-1 truncate">{publicUrl(page)}</span>
 							</a>
 						{:else}
-							<p class="mt-2 text-sm font-bold text-(--muted)">{origin}/{page.slug}</p>
+							<p class="mt-2 text-sm font-bold text-(--muted)">{publicUrl(page)}</p>
 						{/if}
 						<p class="mt-2 text-xs font-bold tracking-[0.14em] text-(--subtle) uppercase">
 							{page.originalFilename} · {Math.max(1, Math.round(page.size / 1024)).toLocaleString()} KB
@@ -87,7 +98,7 @@
 					<div class="flex gap-2">
 						<IconButton
 							label="Copy public link"
-							onclick={() => copyLink(page.slug)}
+							onclick={() => copyLink(page)}
 							disabled={!page.published || Boolean(page.lockedReason)}
 						>
 							{#if copiedSlug === page.slug}
@@ -100,7 +111,7 @@
 							<IconButton
 								label="Open public page"
 								tone="green"
-								href={resolve('/[slug]', { slug: page.slug })}
+								href={publicUrl(page)}
 								target="_blank"
 								rel="noreferrer"
 							>

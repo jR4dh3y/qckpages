@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolveRoute } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { api } from '$convex/_generated/api';
 	import { useQuery } from '@mmailaender/convex-svelte';
 	import { useAuth } from '@mmailaender/convex-better-auth-svelte/svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import AuthLoadingShell from '$lib/components/AuthLoadingShell.svelte';
 	import AuthPanel from '$lib/components/AuthPanel.svelte';
+	import CustomDomainPanel from '$lib/components/CustomDomainPanel.svelte';
 	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
 	import PageList from '$lib/components/PageList.svelte';
 	import PlanComparisonModal from '$lib/components/PlanComparisonModal.svelte';
@@ -15,6 +16,7 @@
 	import UploadPanel from '$lib/components/UploadPanel.svelte';
 	import { authClient, openCustomerPortal, startProCheckout } from '$lib/auth-client';
 	import type { Entitlement, PublicUser, PublishedPage, UploadResponse } from '$lib/types/pages';
+	import type { CustomDomain } from '$lib/types/domains';
 
 	const auth = useAuth();
 	const currentUserQuery = useQuery(api.auth.getCurrentUser, () =>
@@ -26,17 +28,23 @@
 	const entitlementQuery = useQuery(api.billing.getEntitlement, () =>
 		auth.isAuthenticated ? {} : 'skip'
 	);
+	const customDomainQuery = useQuery(api.customDomains.getForCurrentUser, () =>
+		auth.isAuthenticated ? {} : 'skip'
+	);
 
 	let isUploading = $state(false);
 	let isBillingLoading = $state(false);
+	let isDomainWorking = $state(false);
 	let showPlanModal = $state(false);
 	let authError = $state<string | null>(null);
 	let pageError = $state<string | null>(null);
+	let domainError = $state<string | null>(null);
 	let origin = $state('');
 
 	let user = $derived(toPublicUser(currentUserQuery.data));
 	let pages = $derived((pagesQuery.data as PublishedPage[] | undefined) ?? []);
 	let entitlement = $derived(toEntitlement(entitlementQuery.data, user?.userId));
+	let customDomain = $derived((customDomainQuery.data as CustomDomain | null | undefined) ?? null);
 	let publishedCount = $derived(
 		pages.filter((page) => page.published && !page.lockedReason).length
 	);
@@ -52,7 +60,7 @@
 		origin = window.location.origin;
 		const urlParams = new URLSearchParams(window.location.search);
 		if (urlParams.get('cli_login') === 'true') {
-			void goto(resolveRoute('/cli'));
+			void goto(resolve('/cli'));
 		}
 	});
 
@@ -114,6 +122,46 @@
 			}
 		} catch (error) {
 			pageError = error instanceof Error ? error.message : 'Could not delete page';
+		}
+	}
+
+	async function createDomain(hostname: string, pageId: string): Promise<void> {
+		await runDomainAction('/api/domains', 'POST', { hostname, pageId });
+	}
+
+	async function reassignDomain(hostname: string, pageId: string): Promise<void> {
+		await runDomainAction(`/api/domains/${encodeURIComponent(hostname)}`, 'PATCH', { pageId });
+	}
+
+	async function verifyDomain(hostname: string): Promise<void> {
+		await runDomainAction(`/api/domains/${encodeURIComponent(hostname)}/verify`, 'POST');
+	}
+
+	async function removeDomain(hostname: string): Promise<void> {
+		await runDomainAction(`/api/domains/${encodeURIComponent(hostname)}`, 'DELETE');
+	}
+
+	async function runDomainAction(
+		url: string,
+		method: 'POST' | 'PATCH' | 'DELETE',
+		body?: Record<string, string>
+	): Promise<void> {
+		isDomainWorking = true;
+		domainError = null;
+
+		try {
+			const response = await fetch(url, {
+				method,
+				headers: body ? { 'content-type': 'application/json' } : undefined,
+				body: body ? JSON.stringify(body) : undefined
+			});
+			if (!response.ok) {
+				throw new Error(await readApiError(response, 'Could not update custom domain'));
+			}
+		} catch (error) {
+			domainError = error instanceof Error ? error.message : 'Could not update custom domain';
+		} finally {
+			isDomainWorking = false;
 		}
 	}
 
@@ -245,13 +293,28 @@
 		<main
 			class="mx-auto grid min-h-0 w-full max-w-7xl flex-1 gap-4 px-4 py-4 lg:grid-cols-[400px_minmax(0,1fr)]"
 		>
-			<div class="self-start">
+			<div
+				class="hidden-scrollbar max-h-[min(720px,calc(100dvh-9rem))] space-y-4 self-start overflow-y-auto"
+			>
 				<UploadPanel
 					{isUploading}
 					{isQuotaBlocked}
 					{publishedSlugs}
 					error={pageError}
 					onpublish={publishPage}
+					onupgrade={openPlanModal}
+				/>
+				<CustomDomainPanel
+					{isPro}
+					{pages}
+					domain={customDomain}
+					isLoading={customDomainQuery.isLoading}
+					isWorking={isDomainWorking}
+					error={domainError}
+					oncreate={createDomain}
+					onreassign={reassignDomain}
+					onverify={verifyDomain}
+					onremove={removeDomain}
 					onupgrade={openPlanModal}
 				/>
 			</div>
@@ -261,6 +324,7 @@
 				{origin}
 				{usageLabel}
 				isLoading={pagesQuery.isLoading}
+				{customDomain}
 				ondelete={deletePage}
 			/>
 		</main>
@@ -280,3 +344,13 @@
 {:else}
 	<AuthPanel isLoading={auth.isLoading} error={authError} onsignin={signInWithGoogle} />
 {/if}
+
+<style>
+	.hidden-scrollbar {
+		scrollbar-width: none;
+	}
+
+	.hidden-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+</style>

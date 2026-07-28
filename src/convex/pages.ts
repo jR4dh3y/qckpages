@@ -110,7 +110,7 @@ export const commitPublish = mutation({
 		};
 
 		if (existing) {
-			await ctx.db.patch(existing._id, { ...page, lockedReason: undefined });
+			await ctx.db.patch(existing._id, { ...page, deleting: undefined, lockedReason: undefined });
 		} else {
 			await ctx.db.insert('pages', page);
 		}
@@ -119,17 +119,41 @@ export const commitPublish = mutation({
 	}
 });
 
-export const prepareDelete = query({
+export const prepareDelete = mutation({
 	args: { slug: v.string(), userId: v.optional(v.string()) },
 	handler: async (ctx, args) => {
 		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
 		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), targetUserId);
+		const customDomain = await ctx.db
+			.query('customDomains')
+			.withIndex('by_pageId', (q) => q.eq('pageId', page.pageId))
+			.first();
 
+		if (customDomain) {
+			throw new ConvexError(
+				`Page is linked to ${customDomain.hostname}. Reassign or remove the custom domain first.`
+			);
+		}
+
+		await ctx.db.patch(page._id, { deleting: true });
 		return {
 			pageId: page.pageId,
 			bucket: page.bucket,
 			key: page.key
 		};
+	}
+});
+
+export const cancelDelete = mutation({
+	args: {
+		slug: v.string(),
+		pageId: v.string(),
+		userId: v.optional(v.string())
+	},
+	handler: async (ctx, args) => {
+		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
+		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), targetUserId);
+		if (page.pageId === args.pageId) await ctx.db.patch(page._id, { deleting: undefined });
 	}
 });
 
@@ -147,6 +171,16 @@ export const confirmDelete = mutation({
 
 		if (page.pageId !== args.pageId || page.bucket !== args.bucket || page.key !== args.key) {
 			throw new ConvexError('Delete metadata is stale. Try again.');
+		}
+
+		const customDomain = await ctx.db
+			.query('customDomains')
+			.withIndex('by_pageId', (q) => q.eq('pageId', page.pageId))
+			.first();
+		if (customDomain) {
+			throw new ConvexError(
+				`Page is linked to ${customDomain.hostname}. Reassign or remove the custom domain first.`
+			);
 		}
 
 		await ctx.db.delete(page._id);

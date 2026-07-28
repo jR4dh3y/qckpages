@@ -71,6 +71,14 @@
 					>
 						<Check size={14} strokeWidth={3} />
 					</span>
+					<span class="text-sm font-bold text-(--ink)">1 custom redirect domain</span>
+				</li>
+				<li class="flex items-center gap-3">
+					<span
+						class="grid size-6 shrink-0 place-items-center border-2 border-(--green) bg-(--soft-green) text-(--green)"
+					>
+						<Check size={14} strokeWidth={3} />
+					</span>
 					<span class="text-sm font-bold text-(--ink)">Priority support</span>
 				</li>
 			</ul>

@@ -14,13 +14,36 @@ export default defineSchema({
 		size: v.number(),
 		etag: v.string(),
 		published: v.boolean(),
+		deleting: v.optional(v.boolean()),
 		lockedReason: v.optional(v.literal('free_limit')),
 		createdAt: v.string(),
 		updatedAt: v.string()
 	})
 		.index('by_slug', ['slug'])
+		.index('by_pageId', ['pageId'])
 		.index('by_owner_updatedAt', ['ownerId', 'updatedAt'])
 		.index('by_owner_published_updatedAt', ['ownerId', 'published', 'updatedAt']),
+	customDomains: defineTable({
+		ownerId: v.string(),
+		hostname: v.string(),
+		pageId: v.string(),
+		status: v.union(v.literal('pending_dns'), v.literal('active'), v.literal('error')),
+		dnsInstructions: v.array(
+			v.object({
+				type: v.union(v.literal('CNAME'), v.literal('TXT')),
+				name: v.string(),
+				value: v.string(),
+				purpose: v.union(v.literal('traffic'), v.literal('ownership'))
+			})
+		),
+		error: v.optional(v.string()),
+		createdAt: v.string(),
+		updatedAt: v.string(),
+		verifiedAt: v.optional(v.string())
+	})
+		.index('by_ownerId', ['ownerId'])
+		.index('by_hostname', ['hostname'])
+		.index('by_pageId', ['pageId']),
 	entitlements: defineTable({
 		userId: v.string(),
 		tier: v.union(v.literal('free'), v.literal('pro')),
