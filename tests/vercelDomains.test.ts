@@ -64,6 +64,29 @@ describe('Vercel domain response parsing', () => {
 		).toBe('pending_dns');
 	});
 
+	test('uses Vercel nameservers for wildcard page subdomains', () => {
+		const state = provisioningState(
+			'*.example.com',
+			{ name: '*.example.com', verified: false, verification: [] },
+			{ misconfigured: true, recommendedCname: 'ignored.vercel-dns.com' }
+		);
+
+		expect(state.dnsInstructions).toEqual([
+			{
+				type: 'NS',
+				name: 'example.com',
+				value: 'ns1.vercel-dns.com',
+				purpose: 'traffic'
+			},
+			{
+				type: 'NS',
+				name: 'example.com',
+				value: 'ns2.vercel-dns.com',
+				purpose: 'traffic'
+			}
+		]);
+	});
+
 	test('treats a missing or ambiguous configuration as misconfigured', () => {
 		expect(parseDomainConfiguration({}).misconfigured).toBe(true);
 	});

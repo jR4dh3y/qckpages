@@ -35,16 +35,15 @@ export function customDomainStatusFromMessage(message: string): number {
 	if (
 		message.includes('Only one') ||
 		message.includes('already configured') ||
-		message.includes('different Vercel project') ||
-		message.includes('Use reassign')
+		message.includes('different Vercel project')
 	) {
 		return 409;
 	}
 	if (
-		message.includes('Enter an exact') ||
-		message.includes('registrable-domain subdomain') ||
-		message.includes('reserved by QckPages') ||
-		message.includes('Choose a published')
+		message.includes('Enter a domain') ||
+		message.includes('Enter a valid domain') ||
+		message.includes('registrable domain') ||
+		message.includes('reserved by QckPages')
 	) {
 		return 400;
 	}

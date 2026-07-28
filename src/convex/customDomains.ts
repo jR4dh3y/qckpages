@@ -4,7 +4,6 @@ import {
 	action,
 	internalMutation,
 	internalQuery,
-	mutation,
 	query,
 	type ActionCtx
 } from './_generated/server';
@@ -14,15 +13,15 @@ import {
 	getDomainByHostname,
 	getDomainByOwner,
 	normalizeHostname,
-	requireEligiblePage,
 	requireOwnedDomain,
 	requirePro,
 	toCustomDomain
 } from './customDomainModel';
 import { provisioningState, VercelApiError, VercelDomainsClient } from './vercelDomains';
+import { wildcardHostname } from './domainValidation';
 
 const dnsInstructionValidator = v.object({
-	type: v.union(v.literal('CNAME'), v.literal('TXT')),
+	type: v.union(v.literal('CNAME'), v.literal('TXT'), v.literal('NS')),
 	name: v.string(),
 	value: v.string(),
 	purpose: v.union(v.literal('traffic'), v.literal('ownership'))
@@ -39,22 +38,32 @@ export const getForCurrentUser = query({
 	}
 });
 
-export const resolveActiveByHostname = query({
-	args: { hostname: v.string() },
+export const resolveActivePageByHostname = query({
+	args: { baseHostname: v.string(), slug: v.string() },
 	handler: async (ctx, args) => {
-		const hostname = normalizeHostname(args.hostname);
-		const domain = await getDomainByHostname(ctx, hostname);
-		if (!domain || domain.status !== 'active') return null;
+		const baseHostname = normalizeHostname(args.baseHostname);
+		const domain = await getDomainByHostname(ctx, baseHostname);
+		if (!domain || domain.routingMode !== 'subdomains' || domain.status !== 'active') {
+			return null;
+		}
 
 		const page = await ctx.db
 			.query('pages')
-			.withIndex('by_pageId', (q) => q.eq('pageId', domain.pageId))
+			.withIndex('by_slug', (q) => q.eq('slug', args.slug))
 			.unique();
 
-		if (!page?.published || page.lockedReason) return null;
+		if (
+			!page ||
+			page.ownerId !== domain.ownerId ||
+			!page.published ||
+			page.lockedReason ||
+			page.deleting
+		) {
+			return null;
+		}
+
 		return {
 			hostname: domain.hostname,
-			pageId: page.pageId,
 			bucket: page.bucket,
 			key: page.key
 		};
@@ -62,13 +71,14 @@ export const resolveActiveByHostname = query({
 });
 
 export const provision = action({
-	args: { hostname: v.string(), pageId: v.string() },
+	args: { hostname: v.string() },
 	handler: async (ctx, args): Promise<ReturnType<typeof toCustomDomain>> => {
 		const ownerId = authUserId(await requireCurrentUser(ctx));
 		const hostname = normalizeHostname(args.hostname);
+		const providerHostname = wildcardHostname(hostname);
 		const reservation: { created: boolean } = await ctx.runMutation(
 			internal.customDomains.reserve,
-			{ ownerId, hostname, pageId: args.pageId }
+			{ ownerId, hostname }
 		);
 		let vercel: VercelDomainsClient | undefined;
 		let attachedByThisAttempt = false;
@@ -76,11 +86,11 @@ export const provision = action({
 		try {
 			vercel = new VercelDomainsClient();
 			try {
-				await vercel.addDomain(hostname);
+				await vercel.addDomain(providerHostname);
 				attachedByThisAttempt = true;
 			} catch (error) {
 				if (!(error instanceof VercelApiError) || !error.isAlreadyAttached) throw error;
-				const existing = await vercel.getDomain(hostname);
+				const existing = await vercel.getDomain(providerHostname);
 				if (existing.projectId && existing.projectId !== vercel.targetProjectId) {
 					throw new ConvexError('That hostname is attached to a different Vercel project');
 				}
@@ -93,7 +103,7 @@ export const provision = action({
 
 			if (reservation.created && definitive) {
 				if (attachedByThisAttempt && vercel) {
-					await vercel.removeDomain(hostname).catch(() => undefined);
+					await vercel.removeDomain(providerHostname).catch(() => undefined);
 				}
 				await ctx.runMutation(internal.customDomains.releaseReservation, {
 					ownerId,
@@ -137,20 +147,6 @@ export const verify = action({
 	}
 });
 
-export const reassign = mutation({
-	args: { hostname: v.string(), pageId: v.string() },
-	handler: async (ctx, args) => {
-		const ownerId = authUserId(await requireCurrentUser(ctx));
-		const hostname = normalizeHostname(args.hostname);
-		const domain = await requireOwnedDomain(ctx, ownerId, hostname);
-		await requireEligiblePage(ctx, ownerId, args.pageId);
-		const now = new Date().toISOString();
-
-		await ctx.db.patch(domain._id, { pageId: args.pageId, updatedAt: now });
-		return toCustomDomain({ ...domain, pageId: args.pageId, updatedAt: now });
-	}
-});
-
 export const remove = action({
 	args: { hostname: v.string() },
 	handler: async (ctx, args): Promise<null> => {
@@ -160,11 +156,17 @@ export const remove = action({
 
 		try {
 			const vercel = new VercelDomainsClient();
-			await vercel.removeDomain(hostname);
-		} catch (error) {
-			if (!(error instanceof VercelApiError) || !error.isNotFound) {
-				throw new ConvexError(publicErrorMessage(error));
+			for (const providerHostname of [wildcardHostname(hostname), hostname]) {
+				try {
+					await vercel.removeDomain(providerHostname);
+				} catch (error) {
+					if (!(error instanceof VercelApiError) || !error.isNotFound) {
+						throw error;
+					}
+				}
 			}
+		} catch (error) {
+			throw new ConvexError(publicErrorMessage(error));
 		}
 
 		await ctx.runMutation(internal.customDomains.releaseReservation, { ownerId, hostname });
@@ -173,18 +175,14 @@ export const remove = action({
 });
 
 export const reserve = internalMutation({
-	args: { ownerId: v.string(), hostname: v.string(), pageId: v.string() },
+	args: { ownerId: v.string(), hostname: v.string() },
 	handler: async (ctx, args) => {
 		await requirePro(ctx, args.ownerId);
-		await requireEligiblePage(ctx, args.ownerId, args.pageId);
 
 		const ownerDomain = await getDomainByOwner(ctx, args.ownerId);
 		if (ownerDomain) {
 			if (ownerDomain.hostname !== args.hostname) {
-				throw new ConvexError('Only one custom redirect domain is available per Pro account');
-			}
-			if (ownerDomain.pageId !== args.pageId) {
-				throw new ConvexError('Use reassign to change the page for this domain');
+				throw new ConvexError('Only one custom domain is available per Pro account');
 			}
 			return { created: false };
 		}
@@ -196,7 +194,7 @@ export const reserve = internalMutation({
 		await ctx.db.insert('customDomains', {
 			ownerId: args.ownerId,
 			hostname: args.hostname,
-			pageId: args.pageId,
+			routingMode: 'subdomains',
 			status: 'pending_dns',
 			dnsInstructions: [],
 			createdAt: now,
@@ -212,7 +210,8 @@ export const setProvisioningState = internalMutation({
 		hostname: v.string(),
 		status: statusValidator,
 		dnsInstructions: v.array(dnsInstructionValidator),
-		error: v.optional(v.string())
+		error: v.optional(v.string()),
+		routingMode: v.optional(v.literal('subdomains'))
 	},
 	handler: async (ctx, args) => {
 		const domain = await requireOwnedDomain(ctx, args.ownerId, args.hostname);
@@ -226,7 +225,8 @@ export const setProvisioningState = internalMutation({
 			dnsInstructions,
 			error: args.error?.slice(0, 300),
 			updatedAt: now,
-			verifiedAt: args.status === 'active' ? now : domain.verifiedAt
+			verifiedAt: args.status === 'active' ? now : domain.verifiedAt,
+			...(args.routingMode ? { routingMode: args.routingMode } : {})
 		};
 
 		await ctx.db.patch(domain._id, update);
@@ -257,23 +257,24 @@ async function refreshProviderState(
 	hostname: string,
 	attemptVerification: boolean
 ): Promise<ReturnType<typeof toCustomDomain>> {
+	const providerHostname = wildcardHostname(hostname);
 	if (attemptVerification) {
 		try {
-			await vercel.verifyDomain(hostname);
+			await vercel.verifyDomain(providerHostname);
 		} catch (error) {
 			if (!(error instanceof VercelApiError) || error.status !== 400) throw error;
 		}
 	}
 
 	const [domain, configuration] = await Promise.all([
-		vercel.getDomain(hostname),
-		vercel.getConfiguration(hostname)
+		vercel.getDomain(providerHostname),
+		vercel.getConfiguration(providerHostname)
 	]);
 	if (domain.projectId && domain.projectId !== vercel.targetProjectId) {
 		throw new ConvexError('That hostname is attached to a different Vercel project');
 	}
 
-	const state = provisioningState(hostname, domain, configuration);
+	const state = provisioningState(providerHostname, domain, configuration);
 	const updated: ReturnType<typeof toCustomDomain> = await ctx.runMutation(
 		internal.customDomains.setProvisioningState,
 		{
@@ -281,7 +282,8 @@ async function refreshProviderState(
 			hostname,
 			status: state.status,
 			dnsInstructions: state.dnsInstructions,
-			error: state.error
+			error: state.error,
+			routingMode: 'subdomains'
 		}
 	);
 	return updated;

@@ -26,11 +26,14 @@ export default defineSchema({
 	customDomains: defineTable({
 		ownerId: v.string(),
 		hostname: v.string(),
-		pageId: v.string(),
+		// Deprecated: older domain records targeted one page. New domains apply to every owner page.
+		pageId: v.optional(v.string()),
+		// Optional while exact-domain records are upgraded to wildcard page subdomains.
+		routingMode: v.optional(v.literal('subdomains')),
 		status: v.union(v.literal('pending_dns'), v.literal('active'), v.literal('error')),
 		dnsInstructions: v.array(
 			v.object({
-				type: v.union(v.literal('CNAME'), v.literal('TXT')),
+				type: v.union(v.literal('CNAME'), v.literal('TXT'), v.literal('NS')),
 				name: v.string(),
 				value: v.string(),
 				purpose: v.union(v.literal('traffic'), v.literal('ownership'))

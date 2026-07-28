@@ -1,7 +1,7 @@
 export type DomainStatus = 'pending_dns' | 'active' | 'error';
 
 export interface DnsInstruction {
-	type: 'CNAME' | 'TXT';
+	type: 'CNAME' | 'TXT' | 'NS';
 	name: string;
 	value: string;
 	purpose: 'traffic' | 'ownership';
@@ -9,7 +9,7 @@ export interface DnsInstruction {
 
 export interface CustomDomain {
 	hostname: string;
-	pageId: string;
+	routingMode?: 'subdomains';
 	status: DomainStatus;
 	dnsInstructions: DnsInstruction[];
 	error?: string;

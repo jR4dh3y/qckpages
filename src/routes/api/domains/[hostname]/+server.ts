@@ -6,26 +6,7 @@ import {
 	customDomainStatusFromMessage,
 	normalizeRequestedHostname
 } from '$lib/server/custom-domains';
-import type { CustomDomain } from '$lib/types/domains';
 import type { RequestHandler } from './$types';
-
-export const PATCH: RequestHandler = async (event) => {
-	try {
-		const hostname = normalizeRequestedHostname(event.params.hostname);
-		const body = (await event.request.json().catch(() => null)) as Record<string, unknown> | null;
-		if (typeof body?.pageId !== 'string') throw new Error('pageId is required');
-
-		const auth = await resolveAuthContext(event);
-		const convex = createServerConvexClient({ token: auth.token });
-		const domain = (await convex.mutation(api.customDomains.reassign, {
-			hostname,
-			pageId: body.pageId
-		})) as CustomDomain;
-		return json({ domain });
-	} catch (error) {
-		return errorResponse(error, 'Could not reassign the custom domain');
-	}
-};
 
 export const DELETE: RequestHandler = async (event) => {
 	try {

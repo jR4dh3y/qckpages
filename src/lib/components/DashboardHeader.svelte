@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { resolveRoute } from '$app/paths';
-	import { LogOut, Settings, Terminal } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+	import { Globe2, LogOut, Settings, Terminal } from 'lucide-svelte';
 	import type { Snippet } from 'svelte';
 	import UserAvatar from './UserAvatar.svelte';
 	import IconButton from './IconButton.svelte';
@@ -8,12 +8,13 @@
 
 	interface Props {
 		user: PublicUser;
+		current?: 'pages' | 'redirect' | 'cli';
 		onsignout: () => void;
 		onbilling?: () => void | Promise<void>;
 		children?: Snippet;
 	}
 
-	let { user, onsignout, onbilling, children }: Props = $props();
+	let { user, current, onsignout, onbilling, children }: Props = $props();
 	let displayName = $derived(user.name ?? user.email ?? 'Signed in');
 	let email = $derived(user.name ? user.email : undefined);
 </script>
@@ -22,7 +23,7 @@
 	<div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6">
 		<!-- Logo -->
 		<a
-			href={resolveRoute('/')}
+			href={resolve('/')}
 			class="inline-flex h-10 shrink-0 items-center border-2 border-(--ink) bg-(--accent) px-3 text-lg font-black text-[#171717] hover:brightness-105"
 		>
 			QckPages
@@ -30,11 +31,25 @@
 
 		<!-- CLI section link right after QckPages branding -->
 		<a
-			href={resolveRoute('/cli')}
-			class="inline-flex h-10 items-center gap-1.5 border-2 border-(--ink) bg-white px-3 text-xs font-black text-(--ink) transition hover:bg-amber-100 sm:text-sm"
+			href={resolve('/cli')}
+			class={[
+				'inline-flex h-10 items-center gap-1.5 border-2 border-(--ink) px-3 text-xs font-black text-(--ink) transition hover:bg-amber-100 sm:text-sm',
+				current === 'cli' ? 'bg-amber-100' : 'bg-white'
+			]}
 		>
 			<Terminal size={16} />
 			<span>CLI</span>
+		</a>
+
+		<a
+			href={resolve('/redirect')}
+			class={[
+				'inline-flex h-10 items-center gap-1.5 border-2 border-(--ink) px-3 text-xs font-black text-(--ink) transition hover:bg-amber-100 sm:text-sm',
+				current === 'redirect' ? 'bg-amber-100' : 'bg-white'
+			]}
+		>
+			<Globe2 size={16} />
+			<span class="hidden md:inline">Domain</span>
 		</a>
 
 		<!-- Spacer -->

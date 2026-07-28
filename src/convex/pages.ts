@@ -124,16 +124,6 @@ export const prepareDelete = mutation({
 	handler: async (ctx, args) => {
 		const targetUserId = args.userId ?? authUserId(await requireCurrentUser(ctx));
 		const page = await requireOwnedPage(ctx, requireValidSlug(args.slug), targetUserId);
-		const customDomain = await ctx.db
-			.query('customDomains')
-			.withIndex('by_pageId', (q) => q.eq('pageId', page.pageId))
-			.first();
-
-		if (customDomain) {
-			throw new ConvexError(
-				`Page is linked to ${customDomain.hostname}. Reassign or remove the custom domain first.`
-			);
-		}
 
 		await ctx.db.patch(page._id, { deleting: true });
 		return {
@@ -171,16 +161,6 @@ export const confirmDelete = mutation({
 
 		if (page.pageId !== args.pageId || page.bucket !== args.bucket || page.key !== args.key) {
 			throw new ConvexError('Delete metadata is stale. Try again.');
-		}
-
-		const customDomain = await ctx.db
-			.query('customDomains')
-			.withIndex('by_pageId', (q) => q.eq('pageId', page.pageId))
-			.first();
-		if (customDomain) {
-			throw new ConvexError(
-				`Page is linked to ${customDomain.hostname}. Reassign or remove the custom domain first.`
-			);
 		}
 
 		await ctx.db.delete(page._id);
