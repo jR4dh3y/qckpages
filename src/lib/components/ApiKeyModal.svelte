@@ -5,6 +5,7 @@
 	import IconButton from './IconButton.svelte';
 	import TextButton from './TextButton.svelte';
 	import type { Id } from '$convex/_generated/dataModel';
+	import { CLI_INSTALL_COMMANDS, type CliInstallPlatform } from '$lib/cli-install';
 
 	interface Props {
 		onclose: () => void;
@@ -22,6 +23,7 @@
 	let copiedInstall = $state(false);
 	let isGenerating = $state(false);
 	let errorMsg = $state<string | null>(null);
+	let installPlatform = $state<CliInstallPlatform>('unix');
 
 	let keys = $derived(keysQuery.data ?? []);
 
@@ -60,9 +62,6 @@
 			setTimeout(() => (copiedInstall = false), 2000);
 		}
 	}
-
-	const githubInstallCmd =
-		'curl -fsSL https://raw.githubusercontent.com/jR4dh3y/qckpages/main/install.sh | bash';
 </script>
 
 <div
@@ -202,20 +201,46 @@
 
 			<!-- How to Install CLI -->
 			<div class="border-t-2 border-(--line) pt-4">
-				<div
-					class="mb-1.5 flex items-center gap-1.5 text-xs font-black tracking-wider text-(--ink) uppercase"
-				>
-					<Download size={14} class="text-(--ink)" />
-					<span>How to Install CLI</span>
+				<div class="mb-1.5 flex items-center justify-between gap-3">
+					<div
+						class="flex items-center gap-1.5 text-xs font-black tracking-wider text-(--ink) uppercase"
+					>
+						<Download size={14} class="text-(--ink)" />
+						<span>How to Install CLI</span>
+					</div>
+					<div class="flex border-2 border-(--ink) bg-white text-[10px] font-bold">
+						<button
+							type="button"
+							class={[
+								'px-2 py-0.5',
+								installPlatform === 'unix' ? 'bg-(--ink) text-white' : 'text-(--ink)'
+							]}
+							onclick={() => (installPlatform = 'unix')}
+						>
+							Linux / macOS
+						</button>
+						<button
+							type="button"
+							class={[
+								'border-l-2 border-(--ink) px-2 py-0.5',
+								installPlatform === 'windows' ? 'bg-(--ink) text-white' : 'text-(--ink)'
+							]}
+							onclick={() => (installPlatform = 'windows')}
+						>
+							Windows
+						</button>
+					</div>
 				</div>
 				<div
 					class="relative flex items-center justify-between border-2 border-(--ink) bg-(--ink) px-3 py-2 text-(--paper)"
 				>
-					<code class="font-mono text-xs text-amber-300">{githubInstallCmd}</code>
+					<code class="font-mono text-xs text-amber-300">
+						{CLI_INSTALL_COMMANDS[installPlatform]}
+					</code>
 					<button
 						type="button"
 						class="ml-2 flex items-center gap-1 text-[11px] font-bold text-gray-300 hover:text-white"
-						onclick={() => copyToClipboard(githubInstallCmd, 'install')}
+						onclick={() => copyToClipboard(CLI_INSTALL_COMMANDS[installPlatform], 'install')}
 					>
 						{#if copiedInstall}
 							<Check size={12} class="text-green-400" />

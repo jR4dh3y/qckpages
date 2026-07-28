@@ -11,9 +11,12 @@
 import type * as apiKeys from "../apiKeys.js";
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
+import type * as customDomainModel from "../customDomainModel.js";
 import type * as customDomains from "../customDomains.js";
+import type * as domainValidation from "../domainValidation.js";
 import type * as http from "../http.js";
 import type * as pages from "../pages.js";
+import type * as vercelDomains from "../vercelDomains.js";
 
 import type {
   ApiFromModules,
@@ -25,9 +28,12 @@ declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   auth: typeof auth;
   billing: typeof billing;
+  customDomainModel: typeof customDomainModel;
   customDomains: typeof customDomains;
+  domainValidation: typeof domainValidation;
   http: typeof http;
   pages: typeof pages;
+  vercelDomains: typeof vercelDomains;
 }>;
 
 /**

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { DEFAULT_SERVER_URL } from './constants';
 
 export interface QckPageConfig {
 	apiKey?: string;
@@ -20,8 +21,7 @@ export function getConfigDir(): string {
 
 export function loadConfig(): QckPageConfig {
 	const envKey = process.env.QCKPAGE_API_KEY || process.env.QCK_API_KEY;
-	const envServer =
-		process.env.QCKPAGE_SERVER_URL || process.env.SITE_URL || 'http://localhost:5173';
+	const envServer = process.env.QCKPAGE_SERVER_URL || process.env.SITE_URL || DEFAULT_SERVER_URL;
 
 	let fileConfig: QckPageConfig = {};
 	if (existsSync(CONFIG_FILE)) {

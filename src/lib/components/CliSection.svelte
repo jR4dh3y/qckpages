@@ -5,6 +5,7 @@
 	import IconButton from './IconButton.svelte';
 	import TextButton from './TextButton.svelte';
 	import type { Id } from '$convex/_generated/dataModel';
+	import { CLI_INSTALL_COMMANDS } from '$lib/cli-install';
 
 	const keysQuery = useQuery(api.apiKeys.listForCurrentUser, () => ({}));
 	const generateKeyMutation = useMutation(api.apiKeys.generateApiKey);
@@ -21,11 +22,6 @@
 
 	let keys = $derived(keysQuery.data ?? []);
 	let activeKeyCount = $derived(keys.filter((k) => !k.disabled).length);
-
-	const unixInstallCmd =
-		'curl -fsSL https://raw.githubusercontent.com/jR4dh3y/qckpages/main/install.sh | bash';
-	const winInstallCmd =
-		'iwr -useb https://raw.githubusercontent.com/jR4dh3y/qckpages/main/install.ps1 | iex';
 
 	async function handleGenerateKey(): Promise<void> {
 		if (isGenerating) return;
@@ -107,12 +103,12 @@
 			class="relative flex items-center justify-between border-2 border-(--ink) bg-(--ink) px-3 py-2.5 text-(--paper)"
 		>
 			<code class="font-mono text-xs text-amber-300 select-all">
-				{activeOsTab === 'unix' ? unixInstallCmd : winInstallCmd}
+				{CLI_INSTALL_COMMANDS[activeOsTab]}
 			</code>
 			<button
 				type="button"
 				class="ml-2 flex shrink-0 items-center gap-1 text-[11px] font-bold text-gray-300 hover:text-white"
-				onclick={() => copyText(activeOsTab === 'unix' ? unixInstallCmd : winInstallCmd, 'install')}
+				onclick={() => copyText(CLI_INSTALL_COMMANDS[activeOsTab], 'install')}
 			>
 				{#if isCopiedInstall}
 					<Check size={12} class="text-green-400" />

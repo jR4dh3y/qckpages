@@ -6,8 +6,10 @@ import { resolve } from 'node:path';
 import { clearConfig, getConfigDir, loadConfig, saveConfig } from './config';
 import { fetchPublishedPages, fetchUserStatus, publishPageFile } from './api';
 import { formatBytes, openBrowser, prompt, slugify } from './utils';
+import { DEFAULT_SERVER_URL } from './constants';
+import { CLI_INSTALL_COMMANDS } from '../lib/cli-install';
 
-const CLI_VERSION = '0.1.0';
+const CLI_VERSION = '0.1.1';
 
 const program = new Command();
 
@@ -22,7 +24,7 @@ program
 	.action(async (options) => {
 		try {
 			const existingConfig = loadConfig();
-			const serverUrl = options.url || existingConfig.serverUrl || 'http://localhost:5173';
+			const serverUrl = options.url || existingConfig.serverUrl || DEFAULT_SERVER_URL;
 
 			console.log(pc.bold(pc.cyan('\nQckPages CLI Login')));
 
@@ -159,11 +161,7 @@ program
 	.action(() => {
 		console.log(pc.bold(pc.cyan(`\nQckPages CLI Version: v${CLI_VERSION}`)));
 		console.log('To update to the latest version, run:');
-		console.log(
-			pc.bold(
-				'  curl -fsSL https://raw.githubusercontent.com/jR4dh3y/qckpages/main/install.sh | bash\n'
-			)
-		);
+		console.log(pc.bold(`  ${CLI_INSTALL_COMMANDS.unix}\n`));
 	});
 
 // 6. qckpage uninstall
