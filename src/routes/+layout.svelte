@@ -1,11 +1,23 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { dev } from '$app/environment';
 	import { env } from '$env/dynamic/public';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 	import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
 	import { authClient } from '$lib/auth-client';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children, data } = $props();
+
+	// qckpages app shell only. Published pages are redirects to stored HTML and
+	// never render this layout. onMount skips SSR; `dev` skips `vite dev`.
+	onMount(() => {
+		if (dev || !data.vercelTelemetry) return;
+		injectAnalytics({ mode: 'production' });
+		injectSpeedInsights();
+	});
 
 	createSvelteAuthClient({
 		authClient,
